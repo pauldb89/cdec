@@ -55,28 +55,32 @@ class Precomputation {
 
   bool operator==(const Precomputation& other) const;
 
-  static int NONTERMINAL;
-
  private:
   // Finds the most frequent contiguous collocations.
   vector<vector<int>> FindMostFrequentPatterns(
-      shared_ptr<SuffixArray> suffix_array, int num_frequent_patterns,
-      int max_frequent_phrase_len, int min_frequency);
+      shared_ptr<SuffixArray> suffix_array, const vector<int>& data,
+      int num_frequent_patterns, int max_frequent_phrase_len,
+      int min_frequency);
+
+  vector<int> AnnotatePattern(shared_ptr<Vocabulary> vocabulary,
+                              shared_ptr<DataArray> data_array,
+                              const vector<int>& pattern) const;
 
   // Given the locations of the frequent contiguous collocations in a sentence,
   // it adds new entries to the index for each discontiguous collocation
   // matching the criteria specified in the class description.
   void UpdateIndex(
-      shared_ptr<DataArray> data_array, shared_ptr<Vocabulary> vocabulary,
       const vector<tuple<int, int, int>>& matchings,
+      const vector<vector<int>>& annotations,
       int max_rule_span, int min_gap_size, int max_rule_symbols);
 
-  void AppendSubpattern(
-      vector<int>& pattern, shared_ptr<DataArray> data_array,
-      shared_ptr<Vocabulary> vocabulary, int start, int size);
+  void AppendSubpattern(vector<int>& pattern, const vector<int>& subpattern);
 
-  // Adds an occurrence of a collocation.
-  void AppendCollocation(vector<int>& collocations, const vector<int>& collocation);
+  // Adds an occurrence of a binary collocation.
+  void AppendCollocation(vector<int>& collocations, int pos1, int pos2);
+
+  // Adds an occurrence of a ternary collocation.
+  void AppendCollocation(vector<int>& collocations, int pos1, int pos2, int pos3);
 
   friend class boost::serialization::access;
 

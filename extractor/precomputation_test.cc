@@ -24,31 +24,12 @@ class PrecomputationTest : public Test {
   virtual void SetUp() {
     data = {4, 2, 3, 5, 7, 2, 3, 5, 2, 3, 4, 2, 1};
     data_array = make_shared<MockDataArray>();
-    EXPECT_CALL(*data_array, GetSize()).WillRepeatedly(Return(data.size()));
+    EXPECT_CALL(*data_array, GetData()).WillRepeatedly(Return(data));
     for (size_t i = 0; i < data.size(); ++i) {
       EXPECT_CALL(*data_array, AtIndex(i)).WillRepeatedly(Return(data[i]));
     }
-    vector<pair<int, int>> expected_calls = {{8, 1}, {8, 2}, {6, 1}};
-    for (const auto& call: expected_calls) {
-      int start = call.first;
-      int size = call.second;
-      vector<int> word_ids(data.begin() + start, data.begin() + start + size);
-      EXPECT_CALL(*data_array, GetWordIds(start, size))
-          .WillRepeatedly(Return(word_ids));
-    }
-
-    expected_calls = {{1, 1}, {5, 1}, {8, 1}, {9, 1}, {5, 2},
-                      {6, 1}, {8, 2}, {1, 2}, {2, 1}, {11, 1}};
-    for (const auto& call: expected_calls) {
-      int start = call.first;
-      int size = call.second;
-      vector<string> words;
-      for (size_t j = start; j < start + size; ++j) {
-        words.push_back(to_string(data[j]));
-      }
-      EXPECT_CALL(*data_array, GetWords(start, size))
-          .WillRepeatedly(Return(words));
-    }
+    EXPECT_CALL(*data_array, GetWord(2)).WillRepeatedly(Return("2"));
+    EXPECT_CALL(*data_array, GetWord(3)).WillRepeatedly(Return("3"));
 
     vector<int> suffixes{12, 8, 5, 1, 9, 6, 2, 0, 10, 7, 3, 4, 13};
     vector<int> lcp{-1, 0, 2, 3, 1, 0, 1, 2, 0, 2, 0, 1, 0, 0};
@@ -113,41 +94,41 @@ TEST_F(PrecomputationTest, TestCollocations) {
   EXPECT_TRUE(precomputation.Contains(key));
   EXPECT_EQ(expected_value, precomputation.GetCollocations(key));
 
-  key = {2, -1, 2, -1, 2};
+  key = {2, -1, 2, -2, 2};
   expected_value = {1, 5, 8, 5, 8, 11};
   EXPECT_TRUE(precomputation.Contains(key));
   EXPECT_EQ(expected_value, precomputation.GetCollocations(key));
-  key = {2, -1, 2, -1, 3};
+  key = {2, -1, 2, -2, 3};
   expected_value = {1, 5, 9};
   EXPECT_TRUE(precomputation.Contains(key));
   EXPECT_EQ(expected_value, precomputation.GetCollocations(key));
-  key = {2, -1, 3, -1, 2};
+  key = {2, -1, 3, -2, 2};
   expected_value = {1, 6, 8, 5, 9, 11};
   EXPECT_TRUE(precomputation.Contains(key));
   EXPECT_EQ(expected_value, precomputation.GetCollocations(key));
-  key = {2, -1, 3, -1, 3};
+  key = {2, -1, 3, -2, 3};
   expected_value = {1, 6, 9};
   EXPECT_TRUE(precomputation.Contains(key));
   EXPECT_EQ(expected_value, precomputation.GetCollocations(key));
-  key = {3, -1, 2, -1, 2};
+  key = {3, -1, 2, -2, 2};
   expected_value = {2, 5, 8, 2, 5, 11, 2, 8, 11, 6, 8, 11};
   EXPECT_TRUE(precomputation.Contains(key));
   EXPECT_EQ(expected_value, precomputation.GetCollocations(key));
-  key = {3, -1, 2, -1, 3};
+  key = {3, -1, 2, -2, 3};
   expected_value = {2, 5, 9};
   EXPECT_TRUE(precomputation.Contains(key));
   EXPECT_EQ(expected_value, precomputation.GetCollocations(key));
-  key = {3, -1, 3, -1, 2};
+  key = {3, -1, 3, -2, 2};
   expected_value = {2, 6, 8, 2, 6, 11, 2, 9, 11, 6, 9, 11};
   EXPECT_TRUE(precomputation.Contains(key));
   EXPECT_EQ(expected_value, precomputation.GetCollocations(key));
-  key = {3, -1, 3, -1, 3};
+  key = {3, -1, 3, -2, 3};
   expected_value = {2, 6, 9};
   EXPECT_TRUE(precomputation.Contains(key));
   EXPECT_EQ(expected_value, precomputation.GetCollocations(key));
 
   // Exceeds max_rule_symbols.
-  key = {2, -1, 2, -1, 2, 3};
+  key = {2, -1, 2, -2, 2, 3};
   EXPECT_FALSE(precomputation.Contains(key));
   // Contains non frequent pattern.
   key = {2, -1, 5};
