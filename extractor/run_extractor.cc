@@ -26,6 +26,7 @@
 #include "features/target_given_source_coherent.h"
 #include "grammar.h"
 #include "grammar_extractor.h"
+#include "lattice.h"
 #include "precomputation.h"
 #include "rule.h"
 #include "scorer.h"
@@ -83,7 +84,8 @@ int main(int argc, char** argv) {
         "False if phrases may be loose (better, but slower)")
     ("leave_one_out", po::value<bool>()->zero_tokens(),
         "do leave-one-out estimation of grammars "
-        "(e.g. for extracting grammars for the training set");
+        "(e.g. for extracting grammars for the training set")
+    ("lattices", "Set if the inputs are given as word lattices in PLF format");
 
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -212,40 +214,41 @@ int main(int argc, char** argv) {
     fs::create_directory(grammar_path);
   }
 
-  // Reads all sentences for which we extract grammar rules (the paralellization
-  // is simplified if we read all sentences upfront).
-  string sentence;
-  vector<string> sentences;
-  while (getline(cin, sentence)) {
-    sentences.push_back(sentence);
+  // Reads all inputs for which we extract grammar rules (the paralellization
+  // is simplified if we read all inputs upfront).
+  string input;
+  vector<string> inputs;
+  while (getline(cin, input)) {
+    inputs.push_back(input);
   }
 
-  // Extracts the grammar for each sentence and saves it to a file.
-  bool leave_one_out = vm.count("leave_one_out");
-  vector<string> suffixes(sentences.size());
+  // Extracts the grammar for each input and saves it to a file.
+  vector<string> suffixes(inputs.size());
   #pragma omp parallel for schedule(dynamic) num_threads(num_threads)
-  for (size_t i = 0; i < sentences.size(); ++i) {
+  for (size_t i = 0; i < inputs.size(); ++i) {
     string suffix;
-    int position = sentences[i].find("|||");
-    if (position != sentences[i].npos) {
-      suffix = sentences[i].substr(position);
-      sentences[i] = sentences[i].substr(0, position);
+    int position = inputs[i].find("|||");
+    if (position != inputs[i].npos) {
+      suffix = inputs[i].substr(position);
+      inputs[i] = inputs[i].substr(0, position);
     }
     suffixes[i] = suffix;
 
+    Lattice lattice(inputs[i], vocabulary, !vm.count("lattices"));
+
     unordered_set<int> blacklisted_sentence_ids;
-    if (leave_one_out) {
+    if (vm.count("leave_one_out")) {
       blacklisted_sentence_ids.insert(i);
     }
-    Grammar grammar = extractor.GetGrammar(
-        sentences[i], blacklisted_sentence_ids);
+    Grammar grammar = extractor.GetGrammar(lattice, blacklisted_sentence_ids);
+
     ofstream output(GetGrammarFilePath(grammar_path, i).c_str());
     output << grammar;
   }
 
-  for (size_t i = 0; i < sentences.size(); ++i) {
+  for (size_t i = 0; i < inputs.size(); ++i) {
     cout << "<seg grammar=" << GetGrammarFilePath(grammar_path, i) << " id=\""
-         << i << "\"> " << sentences[i] << " </seg> " << suffixes[i] << endl;
+         << i << "\"> " << inputs[i] << " </seg> " << suffixes[i] << endl;
   }
 
   Clock::time_point extraction_stop_time = Clock::now();

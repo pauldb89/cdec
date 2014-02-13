@@ -12,6 +12,7 @@ EXTRA_PROGRAMS = alignment_test \
     feature_sample_source_count_test \
     feature_target_given_source_coherent_test \
     grammar_extractor_test \
+		lattice_test \
     matchings_finder_test \
     matchings_sampler_test \
     phrase_location_sampler_test \
@@ -19,7 +20,6 @@ EXTRA_PROGRAMS = alignment_test \
     precomputation_test \
     rule_extractor_helper_test \
     rule_extractor_test \
-    rule_factory_test \
     scorer_test \
     suffix_array_sampler_test \
     suffix_array_test \
@@ -39,6 +39,7 @@ if HAVE_GTEST
     feature_sample_source_count_test \
     feature_target_given_source_coherent_test \
     grammar_extractor_test \
+		lattice_test \
     matchings_finder_test \
     matchings_sampler_test \
     phrase_location_sampler_test \
@@ -46,7 +47,6 @@ if HAVE_GTEST
     precomputation_test \
     rule_extractor_helper_test \
     rule_extractor_test \
-    rule_factory_test \
     scorer_test \
     suffix_array_sampler_test \
     suffix_array_test \
@@ -81,6 +81,8 @@ feature_target_given_source_coherent_test_SOURCES = features/target_given_source
 feature_target_given_source_coherent_test_LDADD = $(GTEST_LDFLAGS) $(GTEST_LIBS) libextractor.a
 grammar_extractor_test_SOURCES = grammar_extractor_test.cc
 grammar_extractor_test_LDADD = $(GTEST_LDFLAGS) $(GTEST_LIBS) $(GMOCK_LDFLAGS) $(GMOCK_LIBS) libextractor.a
+lattice_test_SOURCES = lattice_test.cc
+lattice_test_LDADD = $(GTEST_LDFLAGS) $(GTEST_LIBS) $(GMOCK_LDFLAGS) $(GMOCK_LIBS) libextractor.a
 matchings_finder_test_SOURCES = matchings_finder_test.cc
 matchings_finder_test_LDADD = $(GTEST_LDFLAGS) $(GTEST_LIBS) $(GMOCK_LDFLAGS) $(GMOCK_LIBS) libextractor.a
 matchings_sampler_test_SOURCES = matchings_sampler_test.cc
@@ -95,8 +97,6 @@ rule_extractor_helper_test_SOURCES = rule_extractor_helper_test.cc
 rule_extractor_helper_test_LDADD = $(GTEST_LDFLAGS) $(GTEST_LIBS) $(GMOCK_LDFLAGS) $(GMOCK_LIBS) libextractor.a
 rule_extractor_test_SOURCES = rule_extractor_test.cc
 rule_extractor_test_LDADD = $(GTEST_LDFLAGS) $(GTEST_LIBS) $(GMOCK_LDFLAGS) $(GMOCK_LIBS) libextractor.a
-rule_factory_test_SOURCES = rule_factory_test.cc
-rule_factory_test_LDADD = $(GTEST_LDFLAGS) $(GTEST_LIBS) $(GMOCK_LDFLAGS) $(GMOCK_LIBS) libextractor.a
 scorer_test_SOURCES = scorer_test.cc
 scorer_test_LDADD = $(GTEST_LDFLAGS) $(GTEST_LIBS) $(GMOCK_LDFLAGS) $(GMOCK_LIBS) libextractor.a
 suffix_array_sampler_test_SOURCES = suffix_array_sampler_test.cc
@@ -142,6 +142,7 @@ libextractor_a_SOURCES = \
   features/target_given_source_coherent.h \
   grammar.cc \
   grammar_extractor.cc \
+	lattice.cc \
   matchings_finder.cc \
   matchings_sampler.cc \
   matchings_trie.cc \
@@ -153,7 +154,6 @@ libextractor_a_SOURCES = \
   rule.cc \
   rule_extractor.cc \
   rule_extractor_helper.cc \
-  rule_factory.cc \
   scorer.cc \
   suffix_array.cc \
   suffix_array_sampler.cc \
