@@ -1,10 +1,11 @@
-#ifndef _GRAMMAR_EXTRACTOR_H_
-#define _GRAMMAR_EXTRACTOR_H_
+#ifndef _RULE_FACTORY_H_
+#define _RULE_FACTORY_H_
 
 #include <memory>
-#include <string>
 #include <vector>
 #include <unordered_set>
+
+#include "matchings_trie.h"
 
 using namespace std;
 
@@ -12,16 +13,30 @@ namespace extractor {
 
 class Alignment;
 class DataArray;
+class FastIntersector;
 class Grammar;
-class HieroCachingRuleFactory;
+class Lattice;
+class MatchingsFinder;
+class PhraseBuilder;
 class Precomputation;
+class Rule;
+class RuleExtractor;
+class Sampler;
 class Scorer;
+class State;
 class SuffixArray;
 class Vocabulary;
 
 /**
- * Class wrapping all the logic for extracting the synchronous context free
- * grammars.
+ * Component containing most of the logic for extracting SCFG rules for a given
+ * sentence.
+ *
+ * Given a sentence (as a vector of word ids), this class constructs all the
+ * possible source phrases starting from this sentence. For each source phrase,
+ * it finds all its occurrences in the source data and samples some of these
+ * occurrences to extract aligned source-target phrase pairs. A trie cache is
+ * used to avoid unnecessary computations if a source phrase can be constructed
+ * more than once (e.g. some words occur more than once in the sentence).
  */
 class GrammarExtractor {
  public:
@@ -31,7 +46,7 @@ class GrammarExtractor {
       shared_ptr<Alignment> alignment,
       shared_ptr<Precomputation> precomputation,
       shared_ptr<Scorer> scorer,
-      shared_ptr<Vocabulary> vocabulary,
+      const shared_ptr<Vocabulary>& vocabulary,
       int min_gap_size,
       int max_rule_span,
       int max_nonterminals,
@@ -40,24 +55,65 @@ class GrammarExtractor {
       bool require_tight_phrases);
 
   // For testing only.
-  GrammarExtractor(shared_ptr<Vocabulary> vocabulary,
-                   shared_ptr<HieroCachingRuleFactory> rule_factory);
+  GrammarExtractor(
+      shared_ptr<MatchingsFinder> finder,
+      shared_ptr<FastIntersector> fast_intersector,
+      shared_ptr<PhraseBuilder> phrase_builder,
+      shared_ptr<RuleExtractor> rule_extractor,
+      shared_ptr<Vocabulary> vocabulary,
+      shared_ptr<Sampler> sampler,
+      shared_ptr<Scorer> scorer,
+      int min_gap_size,
+      int max_rule_span,
+      int max_nonterminals,
+      int max_chunks,
+      int max_rule_symbols);
 
-  // Converts the sentence to a vector of word ids and uses the RuleFactory to
-  // extract the SCFG rules which may be used to decode the sentence.
-  Grammar GetGrammar(
-      const string& sentence,
+  virtual ~GrammarExtractor();
+
+  // Constructs SCFG rules for a given sentence.
+  // (See class description for more details.)
+  virtual Grammar GetGrammar(
+      const Lattice& lattice,
       const unordered_set<int>& blacklisted_sentence_ids);
 
+ protected:
+  GrammarExtractor();
+
  private:
-  // Splits the sentence in a vector of words.
-  vector<string> TokenizeSentence(const string& sentence);
+  // Checks if the phrase (if previously encountered) or its prefix have any
+  // occurrences in the source data.
+  bool CannotHaveMatchings(shared_ptr<TrieNode> node, int word_id);
 
-  // Maps the words to word ids.
-  vector<int> AnnotateWords(const vector<string>& words);
+  // Checks if the phrase has previously been analyzed.
+  bool RequiresLookup(shared_ptr<TrieNode> node, int word_id);
 
+  // Creates a new state in the trie that corresponds to adding a trailing
+  // nonterminal to the current phrase.
+  void AddTrailingNonterminal(vector<int> symbols,
+                              const Phrase& prefix,
+                              const shared_ptr<TrieNode>& prefix_node,
+                              bool starts_with_x);
+
+  // Extends the current state by possibly adding a nonterminal followed by a
+  // terminal.
+  vector<State> ExtendState(
+      const Lattice& lattice, const State& state,
+      const pair<int, int>& edge, vector<int> symbols,
+      const Phrase& phrase, const shared_ptr<TrieNode>& node);
+
+  shared_ptr<MatchingsFinder> matchings_finder;
+  shared_ptr<FastIntersector> fast_intersector;
+  shared_ptr<PhraseBuilder> phrase_builder;
+  shared_ptr<RuleExtractor> rule_extractor;
   shared_ptr<Vocabulary> vocabulary;
-  shared_ptr<HieroCachingRuleFactory> rule_factory;
+  shared_ptr<Sampler> sampler;
+  shared_ptr<Scorer> scorer;
+  int min_gap_size;
+  int max_rule_span;
+  int max_nonterminals;
+  int max_chunks;
+  int max_rule_symbols;
 };
 
 } // namespace extractor
