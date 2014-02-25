@@ -45,6 +45,7 @@ void register_feature_functions() {
   ff_registry.Register("NgramFeatures", new FFFactory<NgramDetector>());
   ff_registry.Register("RuleContextFeatures", new FFFactory<RuleContextFeatures>());
   ff_registry.Register("RuleIdentityFeatures", new FFFactory<RuleIdentityFeatures>());
+  ff_registry.Register("RuleWordAlignmentFeatures", new FFFactory<RuleWordAlignmentFeatures>());
   ff_registry.Register("ParseMatchFeatures", new FFFactory<ParseMatchFeatures>);
   ff_registry.Register("SoftSyntaxFeatures", new FFFactory<SoftSyntaxFeatures>);
   ff_registry.Register("SoftSyntaxFeaturesMindist", new FFFactory<SoftSyntaxFeaturesMindist>);
@@ -57,6 +58,7 @@ void register_feature_functions() {
   ff_registry.Register("KLanguageModel", new KLanguageModelFactory());
   ff_registry.Register("NonLatinCount", new FFFactory<NonLatinCount>);
   ff_registry.Register("RuleShape", new FFFactory<RuleShapeFeatures>);
+  ff_registry.Register("RuleShape2", new FFFactory<RuleShapeFeatures2>);
   ff_registry.Register("RelativeSentencePosition", new FFFactory<RelativeSentencePosition>);
   ff_registry.Register("LexNullJump", new FFFactory<LexNullJump>);
   ff_registry.Register("NewJump", new FFFactory<NewJump>);

@@ -82,14 +82,14 @@ bool InitCommandLine(int argc, char** argv, po::variables_map* conf) {
     ("optimizer,o",po::value<int>()->default_value(1), "Optimizer (SGD=1, PA MIRA w/Delta=2, Cutting Plane MIRA=3, PA MIRA=4, Triple nbest list MIRA=5)")
     ("fear,f",po::value<int>()->default_value(1), "Fear selection (model-cost=1, maxcost=2, maxscore=3)")
     ("hope,h",po::value<int>()->default_value(1), "Hope selection (model+cost=1, mincost=2)")
-    ("max_step_size,C", po::value<double>()->default_value(0.01), "regularization strength (C)")
+    ("max_step_size,C", po::value<double>()->default_value(0.001), "regularization strength (C)")
     ("random_seed,S", po::value<uint32_t>(), "Random seed (if not specified, /dev/random will be used)")
     ("mt_metric_scale,s", po::value<double>()->default_value(1.0), "Amount to scale MT loss function by")
     ("sent_approx,a", "Use smoothed sentence-level BLEU score for approximate scoring")
     ("pseudo_doc,e", "Use pseudo-document BLEU score for approximate scoring")
     ("no_reweight,d","Do not reweight forest for cutting plane")
     ("no_select,n", "Do not use selection heuristic")
-    ("k_best_size,k", po::value<int>()->default_value(250), "Size of hypothesis list to search for oracles")
+    ("k_best_size,k", po::value<int>()->default_value(500), "Size of hypothesis list to search for oracles")
     ("update_k_best,b", po::value<int>()->default_value(1), "Size of good, bad lists to perform update with")
     ("unique_k_best,u", "Unique k-best translation list")
     ("stream,t", "Stream mode (used for realtime)")
@@ -133,6 +133,7 @@ static const int MAX_SMO = 10;
 int cur_pass;
 
 struct HypothesisInfo {
+  HypothesisInfo() : mt_metric(), hope(), fear(), alpha(), oracle_loss() {}
   SparseVector<double> features;
   vector<WordID> hyp;
   double mt_metric;
@@ -414,8 +415,9 @@ struct TrainingObserver : public DecoderObserver {
   template <class Filter>  
   void UpdateOracles(int sent_id, const Hypergraph& forest) {
 
-	if (stream) sent_id = 0;
+    if (stream) sent_id = 0;
     bool PRINT_LIST= false;
+    assert(sent_id < oracles.size());
     vector<boost::shared_ptr<HypothesisInfo> >& cur_good = oracles[sent_id].good;
     vector<boost::shared_ptr<HypothesisInfo> >& cur_bad = oracles[sent_id].bad;
     //TODO: look at keeping previous iterations hypothesis lists around
@@ -810,7 +812,6 @@ int main(int argc, char** argv) {
       }
       else if(optimizer == 1) //sgd - nonadapted step size
 	{
-	   
 	  lambdas += (cur_good.features) * max_step_size;
 	  lambdas -= (cur_bad.features) * max_step_size;
 	}
@@ -928,11 +929,12 @@ int main(int argc, char** argv) {
 
 			lambdas += (cur_pair[1]->features) * step_size;
 			lambdas -= (cur_pair[0]->features) * step_size;
-			cerr << " Lambdas " << lambdas << endl;
-			//reload weights based on update
 
+			//reload weights based on update
 			dense_weights.clear();
 			lambdas.init_vector(&dense_weights);
+                        if (dense_weights.size() < 500)
+                          ShowLargestFeatures(dense_weights);
 			dense_w_local = dense_weights;
 			iter++;
 					
@@ -971,7 +973,7 @@ int main(int argc, char** argv) {
 
 	    for(int u=0;u!=cur_constraint.size();u++)	
 	      { 
-		cerr << cur_constraint[u]->alpha << " " << cur_constraint[u]->hope << " " << cur_constraint[u]->fear << endl;
+		cerr << "alpha=" << cur_constraint[u]->alpha << " hope=" << cur_constraint[u]->hope << " fear=" << cur_constraint[u]->fear << endl;
 		temp_objective += cur_constraint[u]->alpha * cur_constraint[u]->fear;
 	      }
 	    objective += temp_objective;
@@ -999,7 +1001,7 @@ int main(int argc, char** argv) {
     if (!stream) {
 		int node_id = rng->next() * 100000;
 		cerr << " Writing weights to " << node_id << endl;
-		Weights::ShowLargestFeatures(dense_weights);
+		//Weights::ShowLargestFeatures(dense_weights);
 		dots = 0;
 		ostringstream os;
 		os << weights_dir << "/weights.mira-pass" << (cur_pass < 10 ? "0" : "") << cur_pass << "." << node_id << ".gz";

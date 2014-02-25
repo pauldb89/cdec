@@ -242,6 +242,21 @@ void VisitTokens(std::string const& s,F f) {
   VisitTokens(mp.p,mp.p+s.size(),f);
 }
 
+template <class F>
+void VisitTokens(std::string const& s,F f, unsigned start) {
+  if (0) {
+  std::vector<std::string> ss=SplitOnWhitespace(s);
+  for (unsigned i=0;i<ss.size();++i)
+    f(ss[i]);
+  return;
+  }
+  //FIXME:
+  if (s.empty()) return;
+  mutable_c_str mp(s);
+  SLIBDBG("mp="<<mp.p);
+  VisitTokens(mp.p+start,mp.p+s.size(),f);
+}
+
 inline void SplitCommandAndParam(const std::string& in, std::string* cmd, std::string* param) {
   cmd->clear();
   param->clear();
@@ -265,6 +280,8 @@ inline unsigned int UTF8Len(unsigned char x) {
   else if ((x >> 5) == 0x06) return 2;
   else if ((x >> 4) == 0x0e) return 3;
   else if ((x >> 3) == 0x1e) return 4;
+  else if ((x >> 2) == 0x3e) return 5;
+  else if ((x >> 1) == 0x7e) return 6;
   else return 0;
 }
 

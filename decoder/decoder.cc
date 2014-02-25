@@ -86,7 +86,7 @@ struct ELengthWeightFunction {
   }
 };
 inline void ShowBanner() {
-  cerr << "cdec (c) 2009--2013 by Chris Dyer\n";
+  cerr << "cdec (c) 2009--2014 by Chris Dyer\n";
 }
 
 inline string str(char const* name,po::variables_map const& conf) {
@@ -387,6 +387,7 @@ DecoderImpl::DecoderImpl(po::variables_map& conf, int argc, char** argv, istream
         ("show_partition,z", "Compute and show the partition (inside score)")
         ("show_conditional_prob", "Output the conditional log prob to STDOUT instead of a translation")
         ("show_cfg_search_space", "Show the search space as a CFG")
+        ("show_cfg_alignment_space", "Show the alignment hypergraph as a CFG")
         ("show_target_graph", po::value<string>(), "Directory to write the target hypergraphs to")
         ("incremental_search", po::value<string>(), "Run lazy search with this language model file")
         ("coarse_to_fine_beam_prune", po::value<double>(), "Prune paths from coarse parse forest before fine parse, keeping paths within exp(alpha>=0)")
@@ -407,7 +408,7 @@ DecoderImpl::DecoderImpl(po::variables_map& conf, int argc, char** argv, istream
         ("max_translation_sample,X", po::value<int>(), "Sample the max translation from the chart")
         ("pb_max_distortion,D", po::value<int>()->default_value(4), "Phrase-based decoder: maximum distortion")
         ("cll_gradient,G","Compute conditional log-likelihood gradient and write to STDOUT (src & ref required)")
-        ("get_oracle_forest,o", "Calculate rescored hypregraph using approximate BLEU scoring of rules")
+        ("get_oracle_forest,o", "Calculate rescored hypergraph using approximate BLEU scoring of rules")
         ("feature_expectations","Write feature expectations for all features in chart (**OBJ** will be the partition)")
         ("vector_format",po::value<string>()->default_value("b64"), "Sparse vector serialization format for feature expectations or gradients, includes (text or b64)")
         ("combine_size,C",po::value<int>()->default_value(1), "When option -G is used, process this many sentence pairs before writing the gradient (1=emit after every sentence pair)")
@@ -661,11 +662,6 @@ DecoderImpl::DecoderImpl(po::variables_map& conf, int argc, char** argv, istream
   oracle.show_derivation=conf.count("show_derivations");
   remove_intersected_rule_annotations = conf.count("remove_intersected_rule_annotations");
 
-  if (conf.count("extract_rules")) {
-    stringstream ss;
-    ss << sent_id;
-    extract_file.reset(new WriteFile(str("extract_rules",conf)+"/"+ss.str()));
-  }
   combine_size = conf["combine_size"].as<int>();
   if (combine_size < 1) combine_size = 1;
   sent_id = -1;
@@ -718,6 +714,11 @@ bool DecoderImpl::Decode(const string& input, DecoderObserver* o) {
       cerr << buf.substr(0, x) << " ..." << endl;
     }
     cerr << "  id = " << sent_id << endl;
+  }
+  if (conf.count("extract_rules")) {
+    stringstream ss;
+    ss << sent_id << ".gz";
+    extract_file.reset(new WriteFile(str("extract_rules",conf)+"/"+ss.str()));
   }
   string to_translate;
   Lattice ref;
@@ -988,6 +989,8 @@ bool DecoderImpl::Decode(const string& input, DecoderObserver* o) {
          cerr << "  Contst. partition  log(Z): " << log(z) << endl;
       }
       o->NotifyAlignmentForest(smeta, &forest);
+      if (conf.count("show_cfg_alignment_space"))
+        HypergraphIO::WriteAsCFG(forest);
       if (conf.count("forest_output")) {
         ForestWriter writer(str("forest_output",conf), sent_id);
         if (FileExists(writer.fname_)) {
