@@ -71,7 +71,7 @@ extools/mr_stripe_rule_reduce
 extools/score_grammar
 extools/sg_lexer.cc
 extractor/*_test
-extractor/compile
+extractor/*compile
 extractor/extract
 extractor/run_extractor
 gi/clda/src/clda
@@ -211,6 +211,7 @@ training/latent_svm/latent_svm
 training/minrisk/minrisk_optimize
 training/mira/kbest_mira
 training/mira/kbest_cut_mira
+training/mira/ada_opt_sm
 training/pro/mr_pro_map
 training/pro/mr_pro_reduce
 training/rampion/rampion_cccp
