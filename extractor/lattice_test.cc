@@ -40,8 +40,6 @@ class LatticeTest : public Test {
   shared_ptr<MockVocabulary> vocabulary;
 };
 
-/*
-
 TEST_F(LatticeTest, TestSentence) {
   string input = "a b c";
   Lattice lattice(input, vocabulary, true);
@@ -189,7 +187,6 @@ TEST_F(LatticeTest, TestChainedEpsilonTransitions) {
   EXPECT_EQ(expected_extensions, lattice.GetExtensions(4, 1, 10));
   EXPECT_EQ(expected_extensions, lattice.GetExtensions(5, 1, 10));
 }
-*/
 
 TEST_F(LatticeTest, TestEscapedSymbols) {
   string input = "((('n\\\'t', 0, 1),),(('a\\\\b', 0, 1),),)";
