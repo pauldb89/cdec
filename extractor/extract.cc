@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
     ("tight_phrases", po::value<bool>()->default_value(true),
         "False if phrases may be loose (better, but slower)")
     ("leave_one_out", po::value<bool>()->zero_tokens(),
-        "do leave-one-out estimation of grammars "
+        "Do leave-one-out estimation of grammars "
         "(e.g. for extracting grammars for the training set");
 
   po::options_description cmdline_options("Command line options");
@@ -222,7 +222,6 @@ int main(int argc, char** argv) {
 
   // Extracts the grammar for each sentence and saves it to a file.
   vector<string> suffixes(sentences.size());
-  bool leave_one_out = vm.count("leave_one_out");
   #pragma omp parallel for schedule(dynamic) num_threads(num_threads)
   for (size_t i = 0; i < sentences.size(); ++i) {
     string suffix;
@@ -234,7 +233,7 @@ int main(int argc, char** argv) {
     suffixes[i] = suffix;
 
     unordered_set<int> blacklisted_sentence_ids;
-    if (leave_one_out) {
+    if (vm.count("leave_one_out")) {
       blacklisted_sentence_ids.insert(i);
     }
     Grammar grammar = extractor.GetGrammar(
