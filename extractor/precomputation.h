@@ -51,7 +51,11 @@ class Precomputation {
   virtual bool Contains(const vector<int>& pattern) const;
 
   // Returns the list of collocations for a given pattern.
-  virtual vector<int> GetCollocations(const vector<int>& pattern) const;
+  virtual const vector<int>& GetCollocations(const vector<int>& pattern) const;
+
+  virtual const Index& GetInvertedIndex() const;
+
+  virtual const Index& GetCollocations() const;
 
   bool operator==(const Precomputation& other) const;
 
@@ -105,6 +109,7 @@ class Precomputation {
   BOOST_SERIALIZATION_SPLIT_MEMBER();
 
   Index index;
+  Index inverted_index;
 };
 
 } // namespace extractor

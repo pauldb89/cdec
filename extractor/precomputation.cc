@@ -60,7 +60,9 @@ Precomputation::Precomputation(
       }
       int is_super_frequent = it->second < num_super_frequent_patterns;
       matchings.push_back(make_tuple(i, j, is_super_frequent));
-      annotations.push_back(pattern_annotations[it->second]);
+      const vector<int>& annotation = pattern_annotations[it->second];
+      annotations.push_back(annotation);
+      inverted_index[annotation].push_back(i);
     }
   }
   end_time = Clock::now();
@@ -192,8 +194,17 @@ bool Precomputation::Contains(const vector<int>& pattern) const {
   return index.count(pattern);
 }
 
-vector<int> Precomputation::GetCollocations(const vector<int>& pattern) const {
+const vector<int>& Precomputation::GetCollocations(
+    const vector<int>& pattern) const {
   return index.at(pattern);
+}
+
+const Index& Precomputation::GetInvertedIndex() const {
+  return inverted_index;
+}
+
+const Index& Precomputation::GetCollocations() const {
+  return index;
 }
 
 bool Precomputation::operator==(const Precomputation& other) const {

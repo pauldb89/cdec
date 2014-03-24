@@ -2,6 +2,7 @@
 bin_PROGRAMS = sacompile run_extractor extract
 
 EXTRA_PROGRAMS = alignment_test \
+		binary_search_merger_test \
     data_array_test \
     fast_intersector_test \
     feature_count_source_target_test \
@@ -12,6 +13,8 @@ EXTRA_PROGRAMS = alignment_test \
     feature_sample_source_count_test \
     feature_target_given_source_coherent_test \
     grammar_extractor_test \
+		intersector_test \
+		linear_merger_test \
     matchings_finder_test \
     matchings_sampler_test \
     phrase_location_sampler_test \
@@ -25,10 +28,12 @@ EXTRA_PROGRAMS = alignment_test \
     suffix_array_test \
     target_phrase_extractor_test \
     translation_table_test \
+		veb_test \
     vocabulary_test
 
 if HAVE_GTEST
   RUNNABLE_TESTS = alignment_test \
+		binary_search_merger_test \
     data_array_test \
     fast_intersector_test \
     feature_count_source_target_test \
@@ -39,6 +44,8 @@ if HAVE_GTEST
     feature_sample_source_count_test \
     feature_target_given_source_coherent_test \
     grammar_extractor_test \
+		intersector_test \
+		linear_merger_test \
     matchings_finder_test \
     matchings_sampler_test \
     phrase_location_sampler_test \
@@ -52,6 +59,7 @@ if HAVE_GTEST
     suffix_array_test \
     target_phrase_extractor_test \
     translation_table_test \
+		veb_test \
     vocabulary_test
 endif
 
@@ -61,6 +69,8 @@ TESTS = $(RUNNABLE_TESTS)
 
 alignment_test_SOURCES = alignment_test.cc
 alignment_test_LDADD = $(GTEST_LDFLAGS) $(GTEST_LIBS) libextractor.a
+binary_search_merger_test_SOURCES = binary_search_merger_test.cc
+binary_search_merger_test_LDADD = $(GTEST_LDFLAGS) $(GTEST_LIBS) $(GMOCK_LDFLAGS) $(GMOCK_LIBS) libextractor.a
 data_array_test_SOURCES = data_array_test.cc
 data_array_test_LDADD = $(GTEST_LDFLAGS) $(GTEST_LIBS) libextractor.a
 fast_intersector_test_SOURCES = fast_intersector_test.cc
@@ -81,6 +91,10 @@ feature_target_given_source_coherent_test_SOURCES = features/target_given_source
 feature_target_given_source_coherent_test_LDADD = $(GTEST_LDFLAGS) $(GTEST_LIBS) libextractor.a
 grammar_extractor_test_SOURCES = grammar_extractor_test.cc
 grammar_extractor_test_LDADD = $(GTEST_LDFLAGS) $(GTEST_LIBS) $(GMOCK_LDFLAGS) $(GMOCK_LIBS) libextractor.a
+intersector_test_SOURCES = intersector_test.cc
+intersector_test_LDADD = $(GTEST_LDFLAGS) $(GTEST_LIBS) $(GMOCK_LDFLAGS) $(GMOCK_LIBS) libextractor.a
+linear_merger_test_SOURCES = linear_merger_test.cc
+linear_merger_test_LDADD = $(GTEST_LDFLAGS) $(GTEST_LIBS) $(GMOCK_LDFLAGS) $(GMOCK_LIBS) libextractor.a
 matchings_finder_test_SOURCES = matchings_finder_test.cc
 matchings_finder_test_LDADD = $(GTEST_LDFLAGS) $(GTEST_LIBS) $(GMOCK_LDFLAGS) $(GMOCK_LIBS) libextractor.a
 matchings_sampler_test_SOURCES = matchings_sampler_test.cc
@@ -107,6 +121,8 @@ target_phrase_extractor_test_SOURCES = target_phrase_extractor_test.cc
 target_phrase_extractor_test_LDADD = $(GTEST_LDFLAGS) $(GTEST_LIBS) $(GMOCK_LDFLAGS) $(GMOCK_LIBS) libextractor.a
 translation_table_test_SOURCES = translation_table_test.cc
 translation_table_test_LDADD = $(GTEST_LDFLAGS) $(GTEST_LIBS) $(GMOCK_LDFLAGS) $(GMOCK_LIBS) libextractor.a
+veb_test_SOURCES = veb_test.cc
+veb_test_LDADD = $(GTEST_LDFLAGS) $(GTEST_LIBS) libextractor.a
 vocabulary_test_SOURCES = vocabulary_test.cc
 vocabulary_test_LDADD = $(GTEST_LDFLAGS) $(GTEST_LIBS) libextractor.a
 
@@ -122,6 +138,7 @@ extract_LDADD = libextractor.a
 libextractor_a_SOURCES = \
   alignment.cc \
   backoff_sampler.cc \
+	binary_search_merger.cc \
   data_array.cc \
   fast_intersector.cc \
   features/count_source_target.cc \
@@ -142,6 +159,10 @@ libextractor_a_SOURCES = \
   features/target_given_source_coherent.h \
   grammar.cc \
   grammar_extractor.cc \
+	intersector.cc \
+	linear_merger.cc \
+	matching.cc \
+	matching_comparator.cc \
   matchings_finder.cc \
   matchings_sampler.cc \
   matchings_trie.cc \
@@ -160,13 +181,21 @@ libextractor_a_SOURCES = \
   target_phrase_extractor.cc \
   time_util.cc \
   translation_table.cc \
+	veb.cc \
+	veb_bitset.cc \
+	veb_tree.cc \
   vocabulary.cc \
   alignment.h \
   backoff_sampler.h \
+	binary_search_merger.h \
   data_array.h \
   fast_intersector.h \
   grammar.h \
   grammar_extractor.h \
+	intersector.h \
+	linear_merger.h \
+	matching.h \
+	matching_comparator.h \
   matchings_finder.h \
   matchings_sampler.h \
   matchings_trie.h \
@@ -186,6 +215,9 @@ libextractor_a_SOURCES = \
   target_phrase_extractor.h \
   time_util.h \
   translation_table.h \
+	veb.h \
+	veb_bitset.h \
+	veb_tree.h \
   vocabulary.h
 
 AM_CPPFLAGS = -W -Wall -Wno-sign-compare $(OPENMP_CXXFLAGS) $(GTEST_CPPFLAGS) $(GMOCK_CPPFLAGS)

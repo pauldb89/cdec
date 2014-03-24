@@ -82,7 +82,7 @@ TEST_F(FastIntersectorTest, TestCachedCollocation) {
 
   EXPECT_CALL(*precomputation, Contains(symbols)).WillRepeatedly(Return(true));
   EXPECT_CALL(*precomputation, GetCollocations(symbols)).
-      WillRepeatedly(Return(expected_location));
+      WillRepeatedly(ReturnRef(expected_location));
   intersector = make_shared<FastIntersector>(suffix_array, precomputation,
                                              vocabulary, 15, 1);
 
