@@ -67,6 +67,10 @@ int main(int argc, char** argv) {
         "Maximum number of nonterminals in a rule")
     ("max_samples", po::value<int>()->default_value(300),
         "Maximum number of samples")
+    ("use_fast_intersect", po::value<bool>()->default_value(true),
+        "Use the fast set intersection algorithm")
+    ("use_baeza_yates", po::value<bool>()->default_value(true),
+        "Enable the double binary search optimization")
     ("tight_phrases", po::value<bool>()->default_value(true),
         "False if phrases may be loose (better, but slower)")
     ("leave_one_out", po::value<bool>()->zero_tokens(),
@@ -204,6 +208,8 @@ int main(int argc, char** argv) {
       vm["max_nonterminals"].as<int>(),
       vm["max_rule_symbols"].as<int>(),
       vm["max_samples"].as<int>(),
+      vm["use_fast_intersect"].as<bool>(),
+      vm["use_baeza_yates"].as<bool>(),
       vm["tight_phrases"].as<bool>());
 
   // Creates the grammars directory if it doesn't exist.

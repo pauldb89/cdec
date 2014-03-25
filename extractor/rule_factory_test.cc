@@ -6,6 +6,7 @@
 
 #include "grammar.h"
 #include "mocks/mock_fast_intersector.h"
+#include "mocks/mock_intersector.h"
 #include "mocks/mock_matchings_finder.h"
 #include "mocks/mock_rule_extractor.h"
 #include "mocks/mock_sampler.h"
@@ -25,6 +26,7 @@ class RuleFactoryTest : public Test {
  protected:
   virtual void SetUp() {
     finder = make_shared<MockMatchingsFinder>();
+    intersector = make_shared<MockIntersector>();
     fast_intersector = make_shared<MockFastIntersector>();
 
     vocabulary = make_shared<MockVocabulary>();
@@ -54,6 +56,7 @@ class RuleFactoryTest : public Test {
 
   vector<string> feature_names;
   shared_ptr<MockMatchingsFinder> finder;
+  shared_ptr<MockIntersector> intersector;
   shared_ptr<MockFastIntersector> fast_intersector;
   shared_ptr<MockVocabulary> vocabulary;
   shared_ptr<PhraseBuilder> phrase_builder;
@@ -64,13 +67,14 @@ class RuleFactoryTest : public Test {
 };
 
 TEST_F(RuleFactoryTest, TestGetGrammarDifferentWords) {
-  factory = make_shared<HieroCachingRuleFactory>(finder, fast_intersector,
-      phrase_builder, extractor, vocabulary, sampler, scorer, 1, 10, 2, 3, 5);
+  factory = make_shared<HieroCachingRuleFactory>(
+      finder, intersector, fast_intersector, phrase_builder, extractor,
+      vocabulary, sampler, scorer, 1, 10, 2, 3, 5, true);
 
   EXPECT_CALL(*finder, Find(_, _, _))
       .Times(6)
       .WillRepeatedly(Return(PhraseLocation(0, 1)));
-
+  EXPECT_CALL(*intersector, Intersect(_, _, _, _, _)).Times(0);
   EXPECT_CALL(*fast_intersector, Intersect(_, _, _))
       .Times(1)
       .WillRepeatedly(Return(PhraseLocation(0, 1)));
@@ -80,16 +84,34 @@ TEST_F(RuleFactoryTest, TestGetGrammarDifferentWords) {
   Grammar grammar = factory->GetGrammar(word_ids, blacklisted_sentence_ids);
   EXPECT_EQ(feature_names, grammar.GetFeatureNames());
   EXPECT_EQ(7, grammar.GetRules().size());
+
+  // Same test for old intersector.
+  factory = make_shared<HieroCachingRuleFactory>(
+      finder, intersector, fast_intersector, phrase_builder, extractor,
+      vocabulary, sampler, scorer, 1, 10, 2, 3, 5, false);
+
+  EXPECT_CALL(*finder, Find(_, _, _))
+      .Times(6)
+      .WillRepeatedly(Return(PhraseLocation(0, 1)));
+  EXPECT_CALL(*intersector, Intersect(_, _, _, _, _))
+      .Times(1)
+      .WillRepeatedly(Return(PhraseLocation(0, 1)));
+  EXPECT_CALL(*fast_intersector, Intersect(_, _, _)).Times(0);
+
+  grammar = factory->GetGrammar(word_ids, blacklisted_sentence_ids);
+  EXPECT_EQ(feature_names, grammar.GetFeatureNames());
+  EXPECT_EQ(7, grammar.GetRules().size());
 }
 
 TEST_F(RuleFactoryTest, TestGetGrammarRepeatingWords) {
-  factory = make_shared<HieroCachingRuleFactory>(finder, fast_intersector,
-      phrase_builder, extractor, vocabulary, sampler, scorer, 1, 10, 2, 3, 5);
+  factory = make_shared<HieroCachingRuleFactory>(
+      finder, intersector, fast_intersector, phrase_builder, extractor,
+      vocabulary, sampler, scorer, 1, 10, 2, 3, 5, true);
 
   EXPECT_CALL(*finder, Find(_, _, _))
       .Times(12)
       .WillRepeatedly(Return(PhraseLocation(0, 1)));
-
+  EXPECT_CALL(*intersector, Intersect(_, _, _, _, _)).Times(0);
   EXPECT_CALL(*fast_intersector, Intersect(_, _, _))
       .Times(16)
       .WillRepeatedly(Return(PhraseLocation(0, 1)));
@@ -97,6 +119,23 @@ TEST_F(RuleFactoryTest, TestGetGrammarRepeatingWords) {
   vector<int> word_ids = {2, 3, 4, 2, 3};
   unordered_set<int> blacklisted_sentence_ids;
   Grammar grammar = factory->GetGrammar(word_ids, blacklisted_sentence_ids);
+  EXPECT_EQ(feature_names, grammar.GetFeatureNames());
+  EXPECT_EQ(28, grammar.GetRules().size());
+
+  // Same test for old intersector.
+  factory = make_shared<HieroCachingRuleFactory>(
+      finder, intersector, fast_intersector, phrase_builder, extractor,
+      vocabulary, sampler, scorer, 1, 10, 2, 3, 5, false);
+
+  EXPECT_CALL(*finder, Find(_, _, _))
+      .Times(12)
+      .WillRepeatedly(Return(PhraseLocation(0, 1)));
+  EXPECT_CALL(*intersector, Intersect(_, _, _, _, _))
+      .Times(16)
+      .WillRepeatedly(Return(PhraseLocation(0, 1)));
+  EXPECT_CALL(*fast_intersector, Intersect(_, _, _)).Times(0);
+
+  grammar = factory->GetGrammar(word_ids, blacklisted_sentence_ids);
   EXPECT_EQ(feature_names, grammar.GetFeatureNames());
   EXPECT_EQ(28, grammar.GetRules().size());
 }

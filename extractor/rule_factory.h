@@ -13,6 +13,7 @@ namespace extractor {
 
 class Alignment;
 class DataArray;
+class Intersector;
 class FastIntersector;
 class Grammar;
 class MatchingsFinder;
@@ -51,11 +52,14 @@ class HieroCachingRuleFactory {
       int max_nonterminals,
       int max_rule_symbols,
       int max_samples,
+      bool use_fast_intersect,
+      bool use_baeza_yates,
       bool require_tight_phrases);
 
   // For testing only.
   HieroCachingRuleFactory(
       shared_ptr<MatchingsFinder> finder,
+      shared_ptr<Intersector> intersector,
       shared_ptr<FastIntersector> fast_intersector,
       shared_ptr<PhraseBuilder> phrase_builder,
       shared_ptr<RuleExtractor> rule_extractor,
@@ -66,7 +70,8 @@ class HieroCachingRuleFactory {
       int max_rule_span,
       int max_nonterminals,
       int max_chunks,
-      int max_rule_symbols);
+      int max_rule_symbols,
+      bool use_fast_intersect);
 
   virtual ~HieroCachingRuleFactory();
 
@@ -103,6 +108,7 @@ class HieroCachingRuleFactory {
                             const shared_ptr<TrieNode>& node);
 
   shared_ptr<MatchingsFinder> matchings_finder;
+  shared_ptr<Intersector> intersector;
   shared_ptr<FastIntersector> fast_intersector;
   shared_ptr<PhraseBuilder> phrase_builder;
   shared_ptr<RuleExtractor> rule_extractor;
@@ -114,6 +120,7 @@ class HieroCachingRuleFactory {
   int max_nonterminals;
   int max_chunks;
   int max_rule_symbols;
+  bool use_fast_intersect;
 };
 
 } // namespace extractor

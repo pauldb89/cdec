@@ -15,6 +15,7 @@ EXTRA_PROGRAMS = alignment_test \
     grammar_extractor_test \
 		intersector_test \
 		linear_merger_test \
+		matching_comparator_test \
     matchings_finder_test \
     matchings_sampler_test \
     phrase_location_sampler_test \
@@ -46,6 +47,7 @@ if HAVE_GTEST
     grammar_extractor_test \
 		intersector_test \
 		linear_merger_test \
+		matching_comparator_test \
     matchings_finder_test \
     matchings_sampler_test \
     phrase_location_sampler_test \
@@ -95,6 +97,8 @@ intersector_test_SOURCES = intersector_test.cc
 intersector_test_LDADD = $(GTEST_LDFLAGS) $(GTEST_LIBS) $(GMOCK_LDFLAGS) $(GMOCK_LIBS) libextractor.a
 linear_merger_test_SOURCES = linear_merger_test.cc
 linear_merger_test_LDADD = $(GTEST_LDFLAGS) $(GTEST_LIBS) $(GMOCK_LDFLAGS) $(GMOCK_LIBS) libextractor.a
+matching_comparator_test_SOURCES = matching_comparator_test.cc
+matching_comparator_test_LDADD = $(GTEST_LDFLAGS) $(GTEST_LIBS) $(GMOCK_LDFLAGS) $(GMOCK_LIBS) libextractor.a
 matchings_finder_test_SOURCES = matchings_finder_test.cc
 matchings_finder_test_LDADD = $(GTEST_LDFLAGS) $(GTEST_LIBS) $(GMOCK_LDFLAGS) $(GMOCK_LIBS) libextractor.a
 matchings_sampler_test_SOURCES = matchings_sampler_test.cc
