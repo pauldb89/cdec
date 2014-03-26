@@ -53,13 +53,19 @@ class Precomputation {
   // Returns the list of collocations for a given pattern.
   virtual const vector<int>& GetCollocations(const vector<int>& pattern) const;
 
-  virtual const Index& GetInvertedIndex() const;
+  virtual bool ContainsContiguousPhrase(const vector<int>& pattern) const;
 
-  virtual const Index& GetCollocations() const;
+  virtual const vector<int>& GetContiguousMatches(const vector<int>& pattern) const;
+
+  virtual bool ContainsCollocation(const vector<int>& pattern) const;
+
+  virtual const vector<int>& GetCollocationMatches(const vector<int>& pattern) const;
 
   bool operator==(const Precomputation& other) const;
 
  private:
+  vector<int> StripNonterminals(const vector<int>& pattern) const;
+
   // Finds the most frequent contiguous collocations.
   vector<vector<int>> FindMostFrequentPatterns(
       shared_ptr<SuffixArray> suffix_array, const vector<int>& data,

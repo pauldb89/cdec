@@ -244,12 +244,14 @@ Grammar HieroCachingRuleFactory::GetGrammar(
     cerr << "Extract time = " << total_extract_time << " seconds" << endl;
     cerr << "Intersect time = " << total_intersect_time << " seconds" << endl;
     cerr << "Lookup time = " << total_lookup_time << " seconds" << endl;
+    /*
     cerr << "Intersect sort time = " << intersector->intersector_sort_time
          << " seconds" << endl;
     cerr << "Linear merge time = " << intersector->linear_merger->linear_merge_time
          << " seconds" << endl;
     cerr << "Binary search merge time = " << intersector->binary_search_merger->binary_search_time
          << " seconds" << endl;
+    */
   }
   return Grammar(rules, scorer->GetFeatureNames());
 }

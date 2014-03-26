@@ -54,8 +54,6 @@ class Intersector {
   Intersector();
 
  private:
-  void ConstructIndexes(shared_ptr<Precomputation> precomputation);
-
   vector<int> ConvertPhrase(const vector<int>& old_phrase,
                             shared_ptr<DataArray> data_array);
 
@@ -63,13 +61,12 @@ class Intersector {
       PhraseLocation& phrase_location);
 
   shared_ptr<Vocabulary> vocabulary;
+  shared_ptr<Precomputation> precomputation;
   shared_ptr<SuffixArray> suffix_array;
  public:
   shared_ptr<LinearMerger> linear_merger;
   shared_ptr<BinarySearchMerger> binary_search_merger;
  private:
-  Index inverted_index;
-  Index collocations;
   bool use_baeza_yates;
 
   // TODO(pauldb): Don't forget to remove these.

@@ -199,12 +199,39 @@ const vector<int>& Precomputation::GetCollocations(
   return index.at(pattern);
 }
 
-const Index& Precomputation::GetInvertedIndex() const {
-  return inverted_index;
+vector<int> Precomputation::StripNonterminals(
+    const vector<int>& pattern) const {
+  vector<int> result = pattern;
+
+  if (result.size() > 0 && result.front() < 0) {
+    result.erase(result.begin());
+  }
+
+  if (result.size() > 0 && result.back() < 0) {
+    result.erase(result.begin() + result.size() - 1);
+  }
+
+  return result;
 }
 
-const Index& Precomputation::GetCollocations() const {
-  return index;
+bool Precomputation::ContainsContiguousPhrase(
+    const vector<int>& pattern) const {
+  return inverted_index.count(StripNonterminals(pattern));
+}
+
+const vector<int>& Precomputation::GetContiguousMatches(
+    const vector<int>& pattern) const {
+  return inverted_index.at(StripNonterminals(pattern));
+}
+
+bool Precomputation::ContainsCollocation(
+    const vector<int>& pattern) const {
+  return index.count(pattern);
+}
+
+const vector<int>& Precomputation::GetCollocationMatches(
+    const vector<int>& pattern) const {
+  return index.at(pattern);
 }
 
 bool Precomputation::operator==(const Precomputation& other) const {

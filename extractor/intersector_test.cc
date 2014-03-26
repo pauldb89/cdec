@@ -32,14 +32,18 @@ class IntersectorTest : public Test {
           .WillRepeatedly(Return(suffixes[i]));
     }
 
-    vector<int> key = {2, -1, 4};
-    vector<int> values = {0, 2};
-    collocations[key] = values;
+    key = {2, -1, 4};
+    values = {0, 2};
     precomputation = make_shared<MockPrecomputation>();
-    EXPECT_CALL(*precomputation, GetInvertedIndex())
-       .WillRepeatedly(ReturnRef(inverted_index));
-    EXPECT_CALL(*precomputation, GetCollocations())
-       .WillRepeatedly(ReturnRef(collocations));
+    EXPECT_CALL(*precomputation, ContainsCollocation(_))
+        .WillRepeatedly(Return(false));
+    EXPECT_CALL(*precomputation, ContainsCollocation(key))
+        .WillRepeatedly(Return(true));
+    EXPECT_CALL(*precomputation, GetCollocationMatches(key))
+        .WillRepeatedly(ReturnRef(values));
+
+    EXPECT_CALL(*precomputation, ContainsContiguousPhrase(_))
+        .WillRepeatedly(Return(false));
 
     linear_merger = make_shared<MockLinearMerger>();
     binary_search_merger = make_shared<MockBinarySearchMerger>();
@@ -54,9 +58,7 @@ class IntersectorTest : public Test {
     phrase_builder = make_shared<PhraseBuilder>(vocabulary);
   }
 
-  Index inverted_index;
-  Index collocations;
-  vector<int> data;
+  vector<int> key, values;
   shared_ptr<MockVocabulary> vocabulary;
   shared_ptr<MockDataArray> data_array;
   shared_ptr<MockSuffixArray> suffix_array;
