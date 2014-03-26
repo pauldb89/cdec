@@ -76,7 +76,7 @@ class FastIntersectorTest : public Test {
 
 TEST_F(FastIntersectorTest, TestCachedCollocation) {
   vector<int> symbols = {8, -1, 9};
-  vector<int> expected_location = {11};
+  shared_ptr<vector<int>> expected_location = make_shared<vector<int>>({11});
   Phrase phrase = phrase_builder->Build(symbols);
   PhraseLocation prefix_location(15, 16), suffix_location(16, 17);
 

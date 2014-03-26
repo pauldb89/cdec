@@ -23,6 +23,8 @@ struct PhraseLocation {
 
   PhraseLocation(const vector<int>& matchings, int num_subpatterns);
 
+  PhraseLocation(const shared_ptr<vector<int>>& matchings, int num_subpatterns);
+
   // Checks if a phrase has any occurrences in the source data.
   bool IsEmpty() const;
 

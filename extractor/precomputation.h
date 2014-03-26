@@ -17,7 +17,7 @@ using namespace std;
 namespace extractor {
 
 typedef boost::hash<vector<int>> VectorHash;
-typedef unordered_map<vector<int>, vector<int>, VectorHash> Index;
+typedef unordered_map<vector<int>, shared_ptr<vector<int>>, VectorHash> Index;
 
 class DataArray;
 class SuffixArray;
@@ -51,7 +51,7 @@ class Precomputation {
   virtual bool Contains(const vector<int>& pattern) const;
 
   // Returns the list of collocations for a given pattern.
-  virtual vector<int> GetCollocations(const vector<int>& pattern) const;
+  virtual shared_ptr<vector<int>> GetCollocations(const vector<int>& pattern) const;
 
   bool operator==(const Precomputation& other) const;
 
@@ -77,18 +77,18 @@ class Precomputation {
   void AppendSubpattern(vector<int>& pattern, const vector<int>& subpattern);
 
   // Adds an occurrence of a binary collocation.
-  void AppendCollocation(vector<int>& collocations, int pos1, int pos2);
+  void AppendCollocation(shared_ptr<vector<int>>& collocations, int pos1, int pos2);
 
   // Adds an occurrence of a ternary collocation.
-  void AppendCollocation(vector<int>& collocations, int pos1, int pos2, int pos3);
+  void AppendCollocation(shared_ptr<vector<int>>& collocations, int pos1, int pos2, int pos3);
 
   friend class boost::serialization::access;
 
   template<class Archive> void save(Archive& ar, unsigned int) const {
     int num_entries = index.size();
     ar << num_entries;
-    for (pair<vector<int>, vector<int>> entry: index) {
-      ar << entry;
+    for (const auto& entry: index) {
+      ar << entry.first << *entry.second;
     }
   }
 
@@ -96,9 +96,9 @@ class Precomputation {
     int num_entries;
     ar >> num_entries;
     for (size_t i = 0; i < num_entries; ++i) {
-      pair<vector<int>, vector<int>> entry;
-      ar >> entry;
-      index.insert(entry);
+      vector<int> key, value;
+      ar >> key >> value;
+      index[key] = make_shared<vector<int>>(value);
     }
   }
 

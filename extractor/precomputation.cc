@@ -176,28 +176,46 @@ void Precomputation::AppendSubpattern(
 }
 
 void Precomputation::AppendCollocation(
-    vector<int>& collocations, int pos1, int pos2) {
-  collocations.push_back(pos1);
-  collocations.push_back(pos2);
+    shared_ptr<vector<int>>& collocations, int pos1, int pos2) {
+  if (collocations == nullptr) {
+    collocations = make_shared<vector<int>>();
+  }
+  collocations->push_back(pos1);
+  collocations->push_back(pos2);
 }
 
 void Precomputation::AppendCollocation(
-    vector<int>& collocations, int pos1, int pos2, int pos3) {
-  collocations.push_back(pos1);
-  collocations.push_back(pos2);
-  collocations.push_back(pos3);
+    shared_ptr<vector<int>>& collocations, int pos1, int pos2, int pos3) {
+  if (collocations == nullptr) {
+    collocations = make_shared<vector<int>>();
+  }
+  collocations->push_back(pos1);
+  collocations->push_back(pos2);
+  collocations->push_back(pos3);
 }
 
 bool Precomputation::Contains(const vector<int>& pattern) const {
   return index.count(pattern);
 }
 
-vector<int> Precomputation::GetCollocations(const vector<int>& pattern) const {
+shared_ptr<vector<int>> Precomputation::GetCollocations(
+    const vector<int>& pattern) const {
   return index.at(pattern);
 }
 
 bool Precomputation::operator==(const Precomputation& other) const {
-  return index == other.index;
+  if (index.size() != other.index.size()) {
+    return false;
+  }
+
+  for (const auto& entry: index) {
+    auto it = other.index.find(entry.first);
+    if (it == other.index.end() || *entry.second != *it->second) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 } // namespace extractor

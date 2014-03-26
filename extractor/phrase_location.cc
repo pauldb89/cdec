@@ -13,6 +13,12 @@ PhraseLocation::PhraseLocation(const vector<int>& matchings,
     matchings(make_shared<vector<int>>(matchings)),
     num_subpatterns(num_subpatterns) {}
 
+PhraseLocation::PhraseLocation(
+    const shared_ptr<vector<int>>& matchings,
+    int num_subpatterns) :
+    sa_low(0), sa_high(0),
+    matchings(matchings), num_subpatterns(num_subpatterns) {}
+
 bool PhraseLocation::IsEmpty() const {
   return GetSize() == 0;
 }
