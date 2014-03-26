@@ -97,7 +97,13 @@ class Precomputation {
   template<class Archive> void save(Archive& ar, unsigned int) const {
     int num_entries = index.size();
     ar << num_entries;
-    for (pair<vector<int>, vector<int>> entry: index) {
+    for (const auto& entry: index) {
+      ar << entry;
+    }
+
+    num_entries = inverted_index.size();
+    ar << num_entries;
+    for (const auto& entry: inverted_index) {
       ar << entry;
     }
   }
@@ -109,6 +115,13 @@ class Precomputation {
       pair<vector<int>, vector<int>> entry;
       ar >> entry;
       index.insert(entry);
+    }
+
+    ar >> num_entries;
+    for (size_t i = 0; i < num_entries; ++i) {
+      pair<vector<int>, vector<int>> entry;
+      ar >> entry;
+      inverted_index.insert(entry);
     }
   }
 

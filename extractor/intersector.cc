@@ -38,9 +38,7 @@ Intersector::Intersector(shared_ptr<Vocabulary> vocabulary,
     suffix_array(suffix_array),
     linear_merger(linear_merger),
     binary_search_merger(binary_search_merger),
-    use_baeza_yates(use_baeza_yates),
-    intersector_sort_time(0) {
-}
+    use_baeza_yates(use_baeza_yates) {}
 
 Intersector::Intersector() {}
 
@@ -65,22 +63,33 @@ PhraseLocation Intersector::Intersect(
   }
 
   vector<int> locations;
+  auto start_time = Clock::now();
   ExtendPhraseLocation(prefix, prefix_location);
   ExtendPhraseLocation(suffix, suffix_location);
+  sort_time += GetDuration(start_time, Clock::now());
+
+  auto function_start = Clock::now();
   shared_ptr<vector<int> > prefix_matchings = prefix_location.matchings;
   shared_ptr<vector<int> > suffix_matchings = suffix_location.matchings;
   int prefix_subpatterns = prefix_location.num_subpatterns;
   int suffix_subpatterns = suffix_location.num_subpatterns;
   if (use_baeza_yates) {
+    auto start_time = Clock::now();
     binary_search_merger->Merge(locations, phrase, suffix,
         prefix_matchings->begin(), prefix_matchings->end(),
         suffix_matchings->begin(), suffix_matchings->end(),
         prefix_subpatterns, suffix_subpatterns);
+    auto stop_time = Clock::now();
+    binary_search_merger->binary_search_time +=
+        GetDuration(start_time, stop_time);
   } else {
     linear_merger->Merge(locations, phrase, suffix, prefix_matchings->begin(),
         prefix_matchings->end(), suffix_matchings->begin(),
         suffix_matchings->end(), prefix_subpatterns, suffix_subpatterns);
   }
+
+  auto function_stop = Clock::now();
+  inner_time += GetDuration(function_start, function_stop);
   return PhraseLocation(locations, phrase.Arity() + 1);
 }
 
@@ -90,7 +99,6 @@ void Intersector::ExtendPhraseLocation(
   if (phrase_location.matchings != NULL) {
     return;
   }
-
 
   phrase_location.num_subpatterns = 1;
   phrase_location.sa_low = phrase_location.sa_high = 0;
@@ -102,7 +110,6 @@ void Intersector::ExtendPhraseLocation(
     return;
   }
 
-  auto start_time = Clock::now();
   vector<int> matchings;
   matchings.reserve(high - low + 1);
   shared_ptr<VEB> veb = VEB::Create(suffix_array->GetSize());
@@ -117,8 +124,6 @@ void Intersector::ExtendPhraseLocation(
   }
 
   phrase_location.matchings = make_shared<vector<int> >(matchings);
-  auto stop_time = Clock::now();
-  intersector_sort_time += GetDuration(start_time, stop_time);
 }
 
 } // namespace extractor

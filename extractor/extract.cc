@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
         "Maximum number of nonterminals in a rule")
     ("max_samples", po::value<int>()->default_value(300),
         "Maximum number of samples")
-    ("use_fast_intersect", po::value<bool>()->default_value(true),
+    ("use_fast_intersect", po::value<bool>()->default_value(false),
         "Use the fast set intersection algorithm")
     ("use_baeza_yates", po::value<bool>()->default_value(true),
         "Enable the double binary search optimization")

@@ -123,6 +123,10 @@ Grammar HieroCachingRuleFactory::GetGrammar(
   double total_extract_time = 0;
   double total_intersect_time = 0;
   double total_lookup_time = 0;
+  intersector->sort_time = 0;
+  intersector->inner_time = 0;
+  intersector->linear_merger->linear_merge_time = 0;
+  intersector->binary_search_merger->binary_search_time = 0;
 
   MatchingsTrie trie;
   shared_ptr<TrieNode> root = trie.GetRoot();
@@ -244,14 +248,14 @@ Grammar HieroCachingRuleFactory::GetGrammar(
     cerr << "Extract time = " << total_extract_time << " seconds" << endl;
     cerr << "Intersect time = " << total_intersect_time << " seconds" << endl;
     cerr << "Lookup time = " << total_lookup_time << " seconds" << endl;
-    /*
-    cerr << "Intersect sort time = " << intersector->intersector_sort_time
+    cerr << "Intersect inner time = " << intersector->inner_time << " seconds" << endl;
+    cerr << "Intersect sort time = " << intersector->sort_time
          << " seconds" << endl;
     cerr << "Linear merge time = " << intersector->linear_merger->linear_merge_time
          << " seconds" << endl;
-    cerr << "Binary search merge time = " << intersector->binary_search_merger->binary_search_time
+    cerr << "Binary search merge time = "
+         << (intersector->binary_search_merger->binary_search_time - intersector->linear_merger->linear_merge_time)
          << " seconds" << endl;
-    */
   }
   return Grammar(rules, scorer->GetFeatureNames());
 }

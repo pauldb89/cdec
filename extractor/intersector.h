@@ -71,7 +71,8 @@ class Intersector {
 
   // TODO(pauldb): Don't forget to remove these.
  public:
-  double intersector_sort_time;
+  double sort_time;
+  double inner_time;
 };
 
 } // namespace extractor

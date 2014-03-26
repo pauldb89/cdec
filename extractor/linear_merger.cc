@@ -15,8 +15,7 @@ namespace extractor {
 LinearMerger::LinearMerger(shared_ptr<Vocabulary> vocabulary,
                            shared_ptr<DataArray> data_array,
                            shared_ptr<MatchingComparator> comparator) :
-    vocabulary(vocabulary), data_array(data_array), comparator(comparator),
-    linear_merge_time(0) {}
+    vocabulary(vocabulary), data_array(data_array), comparator(comparator) {}
 
 LinearMerger::LinearMerger() {}
 
