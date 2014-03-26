@@ -64,17 +64,17 @@ class Intersector {
 
   shared_ptr<Vocabulary> vocabulary;
   shared_ptr<SuffixArray> suffix_array;
+ public:
   shared_ptr<LinearMerger> linear_merger;
   shared_ptr<BinarySearchMerger> binary_search_merger;
+ private:
   Index inverted_index;
   Index collocations;
   bool use_baeza_yates;
 
   // TODO(pauldb): Don't forget to remove these.
  public:
-  double sort_time;
-  double linear_merge_time;
-  double binary_merge_time;
+  double intersector_sort_time;
 };
 
 } // namespace extractor

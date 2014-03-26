@@ -7,6 +7,7 @@
 #include "matching_comparator.h"
 #include "phrase.h"
 #include "phrase_location.h"
+#include "time_util.h"
 #include "vocabulary.h"
 
 namespace extractor {
@@ -14,7 +15,8 @@ namespace extractor {
 LinearMerger::LinearMerger(shared_ptr<Vocabulary> vocabulary,
                            shared_ptr<DataArray> data_array,
                            shared_ptr<MatchingComparator> comparator) :
-    vocabulary(vocabulary), data_array(data_array), comparator(comparator) {}
+    vocabulary(vocabulary), data_array(data_array), comparator(comparator),
+    linear_merge_time(0) {}
 
 LinearMerger::LinearMerger() {}
 
@@ -25,6 +27,7 @@ void LinearMerger::Merge(
     vector<int>::iterator prefix_start, vector<int>::iterator prefix_end,
     vector<int>::iterator suffix_start, vector<int>::iterator suffix_end,
     int prefix_subpatterns, int suffix_subpatterns) {
+  auto start_time = Clock::now();
   int last_chunk_len = suffix.GetChunkLen(suffix.Arity());
   bool offset = !vocabulary->IsTerminal(suffix.GetSymbol(0));
 
@@ -64,6 +67,8 @@ void LinearMerger::Merge(
       prefix_start += prefix_subpatterns;
     }
   }
+  auto stop_time = Clock::now();
+  linear_merge_time += GetDuration(start_time, stop_time);
 }
 
 } // namespace extractor

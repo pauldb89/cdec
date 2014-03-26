@@ -5,6 +5,7 @@
 #include "matching.h"
 #include "matching_comparator.h"
 #include "phrase.h"
+#include "time_util.h"
 #include "vocabulary.h"
 
 namespace extractor {
@@ -19,7 +20,8 @@ BinarySearchMerger::BinarySearchMerger(
     bool force_binary_search_merge) :
     vocabulary(vocabulary), linear_merger(linear_merger),
     data_array(data_array), comparator(comparator),
-    force_binary_search_merge(force_binary_search_merge) {}
+    force_binary_search_merge(force_binary_search_merge),
+    binary_search_time(0) {}
 
 BinarySearchMerger::BinarySearchMerger() {}
 
@@ -45,6 +47,7 @@ void BinarySearchMerger::Merge(
     return;
   }
 
+  auto start_time = Clock::now();
   vector<int>::iterator low, high, prefix_low, prefix_high, suffix_mid;
   if (prefix_set_size > suffix_set_size) {
     // Binary search on the prefix set.
@@ -148,11 +151,15 @@ void BinarySearchMerger::Merge(
     }
   }
 
+  auto stop_time = Clock::now();
+  binary_search_time += GetDuration(start_time, stop_time);
+
   Merge(locations, phrase, suffix, prefix_start, prefix_low, suffix_start,
         suffix_low, prefix_subpatterns, suffix_subpatterns);
   locations.insert(locations.end(), result.begin(), result.end());
   Merge(locations, phrase, suffix, prefix_high, prefix_end, suffix_high,
         suffix_end, prefix_subpatterns, suffix_subpatterns);
+
 }
 
 bool BinarySearchMerger::IsIntersectionVoid(

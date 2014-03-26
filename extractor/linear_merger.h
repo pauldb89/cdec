@@ -35,6 +35,9 @@ class LinearMerger {
   shared_ptr<Vocabulary> vocabulary;
   shared_ptr<DataArray> data_array;
   shared_ptr<MatchingComparator> comparator;
+
+ public:
+  double linear_merge_time;
 };
 
 } // namespace extractor

@@ -6,6 +6,7 @@
 #include "phrase_location.h"
 #include "precomputation.h"
 #include "suffix_array.h"
+#include "time_util.h"
 #include "veb.h"
 #include "vocabulary.h"
 
@@ -36,7 +37,8 @@ Intersector::Intersector(shared_ptr<Vocabulary> vocabulary,
     suffix_array(suffix_array),
     linear_merger(linear_merger),
     binary_search_merger(binary_search_merger),
-    use_baeza_yates(use_baeza_yates) {
+    use_baeza_yates(use_baeza_yates),
+    intersector_sort_time(0) {
   ConstructIndexes(precomputation);
 }
 
@@ -114,6 +116,7 @@ void Intersector::ExtendPhraseLocation(
     return;
   }
 
+  auto start_time = Clock::now();
   vector<int> matchings;
   matchings.reserve(high - low + 1);
   shared_ptr<VEB> veb = VEB::Create(suffix_array->GetSize());
@@ -128,6 +131,8 @@ void Intersector::ExtendPhraseLocation(
   }
 
   phrase_location.matchings = make_shared<vector<int> >(matchings);
+  auto stop_time = Clock::now();
+  intersector_sort_time += GetDuration(start_time, stop_time);
 }
 
 } // namespace extractor

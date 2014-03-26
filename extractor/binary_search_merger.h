@@ -72,6 +72,9 @@ class BinarySearchMerger {
   shared_ptr<MatchingComparator> comparator;
   // Should be true only for testing.
   bool force_binary_search_merge;
+
+ public:
+  mutable double binary_search_time;
 };
 
 } // namespace extractor
