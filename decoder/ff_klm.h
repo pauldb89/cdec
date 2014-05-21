@@ -6,8 +6,23 @@
 
 #include "ff_factory.h"
 #include "ff.h"
+#include "lm/enumerate_vocab.hh"
 
 template <class Model> struct KLanguageModelImpl;
+
+struct VMapper : public lm::EnumerateVocab {
+  VMapper(std::vector<lm::WordIndex>* out);
+
+  void Add(lm::WordIndex index, const StringPiece &str);
+
+  StringPiece getWord(lm::WordIndex word_id) const;
+
+  std::vector<std::string> getWords() const;
+
+  std::vector<std::string> words;
+  std::vector<lm::WordIndex>* out_;
+  const lm::WordIndex kLM_UNKNOWN_TOKEN;
+};
 
 // the supported template types are instantiated explicitly
 // in ff_klm.cc.

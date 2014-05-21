@@ -74,6 +74,21 @@ void ReadWords(int fd, EnumerateVocab *enumerate, WordIndex expected_count, uint
 
 } // namespace
 
+void VocabularyMapper::Add(WordIndex index, const StringPiece& word) {
+  if (index >= words.size()) {
+    words.resize(index + 1);
+  }
+  words[index] = word.as_string();
+}
+
+StringPiece VocabularyMapper::getWord(WordIndex word_id) const {
+  return words[word_id];
+}
+
+vector<string> VocabularyMapper::getWords() const {
+  return words;
+}
+
 WriteWordsWrapper::WriteWordsWrapper(EnumerateVocab *inner) : inner_(inner) {}
 WriteWordsWrapper::~WriteWordsWrapper() {}
 

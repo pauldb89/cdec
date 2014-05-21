@@ -1,10 +1,13 @@
-bin_PROGRAMS = build_binary ngram_query
+bin_PROGRAMS = build_binary ngram_query predict
 
 build_binary_SOURCES = build_binary_main.cc
 build_binary_LDADD = libklm.a ../util/libklm_util.a ../util/double-conversion/libklm_util_double.a -lz
 
 ngram_query_SOURCES = query_main.cc
 ngram_query_LDADD = libklm.a ../util/libklm_util.a ../util/double-conversion/libklm_util_double.a -lz
+
+predict_SOURCES = predict.cc
+predict_LDADD = libklm.a ../util/libklm_util.a ../util/double-conversion/libklm_util_double.a -lz
 
 #noinst_PROGRAMS = \
 #  ngram_test
@@ -59,5 +62,5 @@ libklm_a_SOURCES = \
   virtual_interface.cc \
   vocab.cc
 
-AM_CPPFLAGS = -W -Wall -Wno-sign-compare -I$(top_srcdir)/klm
+AM_CPPFLAGS = -W -Wall -Wno-sign-compare -Wno-unused-parameter -I$(top_srcdir)/klm -I$(top_srcdir)/decoder -I$(top_srcdir)/utils
 

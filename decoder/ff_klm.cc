@@ -70,34 +70,36 @@ string KLanguageModel<Model>::usage(bool /*param*/,bool /*verbose*/) {
   return "KLanguageModel";
 }
 
+VMapper::VMapper(vector<lm::WordIndex>* out)
+    : out_(out), kLM_UNKNOWN_TOKEN(0) {
+  out_->clear();
+}
+
+void VMapper::Add(lm::WordIndex index, const StringPiece &str) {
+  const WordID cdec_id = TD::Convert(str.as_string());
+  if (cdec_id >= out_->size()) {
+    out_->resize(cdec_id + 1, kLM_UNKNOWN_TOKEN);
+  }
+  (*out_)[cdec_id] = index;
+  if (index >= words.size()) {
+    words.resize(index + 1);
+  }
+  words[index] = str.as_string();
+}
+
+StringPiece VMapper::getWord(lm::WordIndex word_id) const {
+  if (word_id < 0 && word_id >= words.size()) {
+    cout << word_id << " " << words.size() << endl;
+    assert(false);
+  }
+  return words[word_id];
+}
+
+vector<string> VMapper::getWords() const {
+  return words;
+}
+
 namespace {
-
-struct VMapper : public lm::EnumerateVocab {
-  VMapper(vector<lm::WordIndex>* out) : out_(out), kLM_UNKNOWN_TOKEN(0) { out_->clear(); }
-  void Add(lm::WordIndex index, const StringPiece &str) {
-    const WordID cdec_id = TD::Convert(str.as_string());
-    if (cdec_id >= out_->size()) {
-      out_->resize(cdec_id + 1, kLM_UNKNOWN_TOKEN);
-    }
-    (*out_)[cdec_id] = index;
-    if (index >= words.size()) {
-      words.resize(index + 1);
-    }
-    words[index] = str.as_string();
-  }
-
-  StringPiece getWord(lm::WordIndex word_id) const {
-    if (word_id < 0 && word_id >= words.size()) {
-      cout << word_id << " " << words.size() << endl;
-      assert(false);
-    }
-    return words[word_id];
-  }
-
-  vector<string> words;
-  vector<lm::WordIndex>* out_;
-  const lm::WordIndex kLM_UNKNOWN_TOKEN;
-};
 
 #pragma pack(push)
 #pragma pack(1)

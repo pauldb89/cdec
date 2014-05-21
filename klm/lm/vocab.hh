@@ -28,12 +28,24 @@ inline uint64_t HashForVocab(const StringPiece &str) {
 struct ProbingVocabularyHeader;
 } // namespace detail
 
+class VocabularyMapper : public EnumerateVocab {
+  public:
+    void Add(WordIndex index, const StringPiece& str);
+
+    StringPiece getWord(WordIndex word_id) const;
+
+    std::vector<std::string> getWords() const;
+
+  private:
+    std::vector<std::string> words;
+};
+
 class WriteWordsWrapper : public EnumerateVocab {
   public:
     WriteWordsWrapper(EnumerateVocab *inner);
 
     ~WriteWordsWrapper();
-    
+
     void Add(WordIndex index, const StringPiece &str);
 
     const std::string &Buffer() const { return buffer_; }
