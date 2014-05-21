@@ -199,6 +199,7 @@ struct CSVMapper : public lm::EnumerateVocab {
       out_->resize(cdec_id + 1, kLM_UNKNOWN_TOKEN);
     (*out_)[cdec_id] = index;
   }
+
   vector<lm::WordIndex>* out_;
   const lm::WordIndex kLM_UNKNOWN_TOKEN;
 };

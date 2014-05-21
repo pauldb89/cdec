@@ -15,6 +15,8 @@
 
 #include <string.h>
 
+using namespace std;
+
 namespace lm {
 namespace ngram {
 
@@ -206,6 +208,10 @@ WordIndex ProbingVocabulary::Insert(const StringPiece &str) {
   }
 }
 
+StringPiece ProbingVocabulary::getWord(WordIndex word_id) const {
+  return enumerate_->getWord(word_id);
+}
+
 void ProbingVocabulary::InternalFinishedLoading() {
   lookup_.FinishedInserting();
   header_->bound = bound_;
@@ -213,11 +219,14 @@ void ProbingVocabulary::InternalFinishedLoading() {
   SetSpecial(Index("<s>"), Index("</s>"), 0);
 }
 
-void ProbingVocabulary::LoadedBinary(bool have_words, int fd, EnumerateVocab *to, uint64_t offset) {
+void ProbingVocabulary::LoadedBinary(
+    bool have_words, int fd,
+    EnumerateVocab *to, uint64_t offset) {
   UTIL_THROW_IF(header_->version != kProbingVocabularyVersion, FormatLoadException, "The binary file has probing version " << header_->version << " but the code expects version " << kProbingVocabularyVersion << ".  Please rerun build_binary using the same version of the code.");
   bound_ = header_->bound;
   SetSpecial(Index("<s>"), Index("</s>"), 0);
   if (have_words) ReadWords(fd, to, bound_, offset);
+  enumerate_ = to;
 }
 
 void MissingUnknown(const Config &config) throw(SpecialWordMissingException) {

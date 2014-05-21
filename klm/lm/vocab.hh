@@ -87,6 +87,10 @@ class SortedVocabulary : public base::Vocabulary {
 
     void LoadedBinary(bool have_words, int fd, EnumerateVocab *to, uint64_t offset);
 
+    StringPiece getWord(WordIndex word_id) const {
+      return "pasparol";
+    }
+
   private:
     uint64_t *begin_, *end_;
 
@@ -94,7 +98,10 @@ class SortedVocabulary : public base::Vocabulary {
 
     bool saw_unk_;
 
+  public:
     EnumerateVocab *enumerate_;
+
+  private:
 
     // Actual strings.  Used only when loading from ARPA and enumerate_ != NULL 
     util::Pool string_backing_;
@@ -156,6 +163,8 @@ class ProbingVocabulary : public base::Vocabulary {
 
     void LoadedBinary(bool have_words, int fd, EnumerateVocab *to, uint64_t offset);
 
+    StringPiece getWord(WordIndex word_id) const;
+
   private:
     void InternalFinishedLoading();
 
@@ -167,8 +176,10 @@ class ProbingVocabulary : public base::Vocabulary {
 
     bool saw_unk_;
 
+  public:
     EnumerateVocab *enumerate_;
 
+  private:
     detail::ProbingVocabularyHeader *header_;
 };
 

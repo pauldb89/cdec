@@ -45,6 +45,8 @@
 #include "util/murmur_hash.hh"
 
 #include <algorithm>
+#include <cassert>
+#include <iostream>
 
 namespace lm {
 namespace ngram {
@@ -65,6 +67,7 @@ template <class M> class RuleScore {
     void Terminal(WordIndex word) {
       State copy(out_->right);
       FullScoreReturn ret(model_.FullScore(copy, word, out_->right));
+      assert(ret.prob <= 0);
       if (left_done_) { prob_ += ret.prob; return; }
       if (ret.independent_left) {
         prob_ += ret.prob;
@@ -72,6 +75,7 @@ template <class M> class RuleScore {
         return;
       }
       out_->left.pointers[out_->left.length++] = ret.extend_left;
+      assert(ret.rest <= 0);
       prob_ += ret.rest;
       if (out_->right.length != copy.length + 1)
         left_done_ = true;
@@ -79,17 +83,23 @@ template <class M> class RuleScore {
 
     // Faster version of NonTerminal for the case where the rule begins with a non-terminal.  
     void BeginNonTerminal(const ChartState &in, float prob = 0.0) {
+      assert(prob <= 0);
       prob_ = prob;
       *out_ = in;
       left_done_ = in.left.full;
     }
 
     void NonTerminal(const ChartState &in, float prob = 0.0) {
+      assert(prob <= 0);
       prob_ += prob;
       
       if (!in.left.length) {
         if (in.left.full) {
-          for (const float *i = out_->right.backoff; i < out_->right.backoff + out_->right.length; ++i) prob_ += *i;
+          for (const float *i = out_->right.backoff; i < out_->right.backoff + out_->right.length; ++i) 
+          {
+            assert(*i <= 0);
+            prob_ += *i;
+          }
           left_done_ = true;
           out_->right = in.right;
         }
@@ -99,7 +109,9 @@ template <class M> class RuleScore {
       if (!out_->right.length) {
         out_->right = in.right;
         if (left_done_) {
-          prob_ += model_.UnRest(in.left.pointers, in.left.pointers + in.left.length, 1);
+          float ret = model_.UnRest(in.left.pointers, in.left.pointers + in.left.length, 1);
+          assert(ret <= 0);
+          prob_ += ret;
           return;
         }
         if (out_->left.length) {
@@ -125,7 +137,10 @@ template <class M> class RuleScore {
       }
 
       if (in.left.full) {
-        for (const float *i = back; i != back + next_use; ++i) prob_ += *i;
+        for (const float *i = back; i != back + next_use; ++i) {
+          assert(*i <= 0);
+          prob_ += *i;
+        }
         left_done_ = true;
         out_->right = in.right;
         return;
@@ -152,6 +167,7 @@ template <class M> class RuleScore {
     float Finish() {
       // A N-1-gram might extend left and right but we should still set full to true because it's an N-1-gram.  
       out_->left.full = left_done_ || (out_->left.length == model_.Order() - 1);
+      //assert(prob_ <= 0);
       return prob_;
     }
 
@@ -179,7 +195,9 @@ template <class M> class RuleScore {
         if (!next_use) {
           // Early exit.  
           out_->right = in.right;
-          prob_ += model_.UnRest(in.left.pointers + extend_length, in.left.pointers + in.left.length, extend_length + 1);
+          float ret = model_.UnRest(in.left.pointers + extend_length, in.left.pointers + in.left.length, extend_length + 1);
+          assert(ret <= 0);
+          prob_ += ret;
           return true;
         }
       }
@@ -189,15 +207,18 @@ template <class M> class RuleScore {
 
     void ProcessRet(const FullScoreReturn &ret) {
       if (left_done_) {
+        //assert(ret.prob <= 0);
         prob_ += ret.prob;
         return;
       }
       if (ret.independent_left) {
+        //assert(ret.prob <= 0);
         prob_ += ret.prob;
         left_done_ = true;
         return;
       }
       out_->left.pointers[out_->left.length++] = ret.extend_left;
+      //assert(ret.rest <= 0);
       prob_ += ret.rest;
     }
 

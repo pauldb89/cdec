@@ -10,9 +10,12 @@
 
 #include <algorithm>
 #include <functional>
+#include <iostream>
 #include <numeric>
 #include <cmath>
 #include <limits>
+
+using namespace std;
 
 namespace lm {
 namespace ngram {
@@ -132,10 +135,15 @@ template <class Search, class VocabularyT> void GenericModel<Search, VocabularyT
 }
 
 template <class Search, class VocabularyT> FullScoreReturn GenericModel<Search, VocabularyT>::FullScore(const State &in_state, const WordIndex new_word, State &out_state) const {
+  // cout << vocab_.getWord(new_word) << " ";
+  for (int i = 0; i < in_state.length; ++i) {
+  //  cout << vocab_.getWord(in_state.words[i]) << " ";
+  }
   FullScoreReturn ret = ScoreExceptBackoff(in_state.words, in_state.words + in_state.length, new_word, out_state);
   for (const float *i = in_state.backoff + ret.ngram_length - 1; i < in_state.backoff + in_state.length; ++i) {
     ret.prob += *i;
   }
+  // cout << exp(ret.prob) << endl;
   return ret;
 }
 
@@ -223,6 +231,7 @@ template <class Search, class VocabularyT> FullScoreReturn GenericModel<Search, 
   for (const float *b = backoff_in + ret.ngram_length - extend_length; b < backoff_in + (add_rend - add_rbegin); ++b) ret.prob += *b;
   ret.prob -= subtract_me;
   ret.rest -= subtract_me;
+  //assert(ret.rest <= 0);
   return ret;
 }
 
@@ -264,18 +273,25 @@ template <class Search, class VocabularyT> FullScoreReturn GenericModel<Search, 
   out_state.words[0] = new_word;
   if (context_rbegin == context_rend) return ret;
 
-  ResumeScore(context_rbegin, context_rend, 0, node, out_state.backoff + 1, out_state.length, ret);
+  ResumeScore(context_rbegin, context_rend, 0, node,
+              out_state.backoff + 1, out_state.length, ret);
   CopyRemainingHistory(context_rbegin, out_state);
   return ret;
 }
 
-template <class Search, class VocabularyT> void GenericModel<Search, VocabularyT>::ResumeScore(const WordIndex *hist_iter, const WordIndex *const context_rend, unsigned char order_minus_2, typename Search::Node &node, float *backoff_out, unsigned char &next_use, FullScoreReturn &ret) const {
+template <class Search, class VocabularyT> void GenericModel<Search, VocabularyT>::ResumeScore(
+    const WordIndex *hist_iter, const WordIndex *const context_rend,
+    unsigned char order_minus_2, typename Search::Node &node,
+    float *backoff_out, unsigned char &next_use,
+    FullScoreReturn &ret) const {
   for (; ; ++order_minus_2, ++hist_iter, ++backoff_out) {
     if (hist_iter == context_rend) return;
     if (ret.independent_left) return;
     if (order_minus_2 == P::Order() - 2) break;
 
-    typename Search::MiddlePointer pointer(search_.LookupMiddle(order_minus_2, *hist_iter, node, ret.independent_left, ret.extend_left));
+    typename Search::MiddlePointer pointer(
+        search_.LookupMiddle(order_minus_2, *hist_iter, node,
+                             ret.independent_left, ret.extend_left));
     if (!pointer.Found()) return;
     *backoff_out = pointer.Backoff();
     ret.prob = pointer.Prob();

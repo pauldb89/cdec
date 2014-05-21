@@ -18,6 +18,10 @@ class EnumerateVocab {
 
     virtual void Add(WordIndex index, const StringPiece &str) = 0;
 
+    virtual StringPiece getWord(WordIndex word_id) const {
+      return "pasparol";
+    }
+
   protected:
     EnumerateVocab() {}
 };
