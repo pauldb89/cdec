@@ -6,6 +6,7 @@
 #include "ff_spans.h"
 #include "ff_lm.h"
 #include "ff_klm.h"
+#include "ff_lbl.h"
 #include "ff_ngrams.h"
 #include "ff_csplit.h"
 #include "ff_wordalign.h"
@@ -56,6 +57,7 @@ void register_feature_functions() {
   ff_registry.Register("RuleSourceBigramFeatures", new FFFactory<RuleSourceBigramFeatures>());
   ff_registry.Register("RuleTargetBigramFeatures", new FFFactory<RuleTargetBigramFeatures>());
   ff_registry.Register("KLanguageModel", new KLanguageModelFactory());
+  ff_registry.Register("LBLLanguageModel", new LBLLanguageModelFactory());
   ff_registry.Register("NonLatinCount", new FFFactory<NonLatinCount>);
   ff_registry.Register("RuleShape", new FFFactory<RuleShapeFeatures>);
   ff_registry.Register("RuleShape2", new FFFactory<RuleShapeFeatures2>);

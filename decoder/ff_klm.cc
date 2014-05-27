@@ -12,6 +12,7 @@
 #include "tdict.h"
 #include "lm/model.hh"
 #include "lm/enumerate_vocab.hh"
+#include "lm/value.hh"
 #include "utils/verbose.h"
 
 #include "lm/left.hh"
@@ -88,7 +89,7 @@ void VMapper::Add(lm::WordIndex index, const StringPiece &str) {
 }
 
 StringPiece VMapper::getWord(lm::WordIndex word_id) const {
-  if (word_id < 0 && word_id >= words.size()) {
+  if (word_id >= words.size()) {
     cout << word_id << " " << words.size() << endl;
     assert(false);
   }
@@ -134,8 +135,8 @@ template <class Model> class BoundaryRuleScore {
       eos_ = sub.seen_eos;
     }
 
-    void NonTerminal(const BoundaryAnnotatedState &sub) {
-      back_.NonTerminal(sub.state, 0.0f);
+    void NonTerminal(const BoundaryAnnotatedState &sub, bool debug = false) {
+      back_.NonTerminal(sub.state, 0.0f, debug);
       // cdec only calls this if there's content.  
       if (sub.seen_bos) {
         bos_ = true;
@@ -145,8 +146,8 @@ template <class Model> class BoundaryRuleScore {
       eos_ |= sub.seen_eos;
     }
 
-    void Terminal(lm::WordIndex word) {
-      back_.Terminal(word);
+    void Terminal(lm::WordIndex word, bool debug = false) {
+      back_.Terminal(word, debug);
       if (eos_) penalty_ -= 100.0f;
       if (word == end_sentence_) eos_ = true;
     }
@@ -166,6 +167,33 @@ template <class Model> class BoundaryRuleScore {
 
 } // namespace
 
+template<class Model>
+void PrintState(const lm::ngram::ChartState& state, Model* ngram_) {
+  lm::WordIndex left_context[KENLM_MAX_ORDER];
+  for (int i = 0; i < state.left.length; ++i) {
+    bool found = false;
+    for (lm::WordIndex new_word = 0; new_word < ngram_->GetVocabulary().Bound(); ++new_word) {
+      typename Model::Node node;
+      lm::ngram::State out_state;
+      ngram_->ScoreExceptBackoff(left_context, left_context + i, new_word, out_state, node);
+      if (node == state.left.pointers[i]) {
+        cout << "*" << ngram_->GetVocabulary().getWord(new_word) << "* ";
+        for (int j = i - 1; j >= 0; --j) {
+          left_context[j + 1] = left_context[j];
+        }
+        left_context[0] = new_word;
+        found = true;
+        break;
+      }
+    }
+    assert(found);
+  }
+
+  for (int i = state.right.length - 1; i >= 0; --i) {
+    cout << ngram_->GetVocabulary().getWord(state.right.words[i]) << " ";
+  }
+}
+
 template <class Model>
 class KLanguageModelImpl {
  public:
@@ -173,6 +201,31 @@ class KLanguageModelImpl {
     *oovs = 0;
     *emit = 0;
     const vector<WordID>& e = rule.e();
+    for (WordID word_id: e) {
+      if (word_id <= 0) {
+        cout << "[X, " << -word_id << "] ";
+      } else {
+        cout << TD::Convert(word_id) << " ";
+      }
+    }
+
+    vector<WordID> expected = {892, 5, 6, 0};
+    debug = e == expected;
+
+    if (debug) {
+      /*
+      cout << "begin debug" << endl;
+      for (WordID id: e) {
+        if (id <= 0) {
+          PrintState<Model>(static_cast<const BoundaryAnnotatedState*>(ant_states[-id])->state, ngram_);
+        } else {
+          cout << TD::Convert(id) << " ";
+        }
+      }
+      */
+    }
+    // cout << endl;
+
     BoundaryRuleScore<Model> ruleScore(*ngram_, *static_cast<BoundaryAnnotatedState*>(remnant));
     unsigned i = 0;
     if (e.size()) {
@@ -184,20 +237,25 @@ class KLanguageModelImpl {
         ++i;
       }
     }
+
     for (; i < e.size(); ++i) {
       if (e[i] <= 0) {
-        ruleScore.NonTerminal(*static_cast<const BoundaryAnnotatedState*>(ant_states[-e[i]]));
+        ruleScore.NonTerminal(*static_cast<const BoundaryAnnotatedState*>(ant_states[-e[i]]), debug);
       } else {
         float ep = 0.f;
         const WordID cdec_word_or_class = ClassifyWordIfNecessary(e[i], &ep);
         if (ep) { *emit += ep; }
         const lm::WordIndex cur_word = MapWord(cdec_word_or_class); // map to LM's id
         if (cur_word == 0) (*oovs) += 1.0;
-        ruleScore.Terminal(cur_word);
+        ruleScore.Terminal(cur_word, debug);
       }
     }
     double ret = ruleScore.Finish();
     static_cast<BoundaryAnnotatedState*>(remnant)->state.ZeroRemaining();
+
+    cout << "final state: ";
+    PrintState<Model>(static_cast<BoundaryAnnotatedState*>(remnant)->state, ngram_);
+    cout << endl;
     return ret;
   }
 
@@ -329,7 +387,9 @@ class KLanguageModelImpl {
   vector<lm::WordIndex> cdec2klm_map_;
   vector<pair<WordID,float> > word2class_map_; // if this is a class-based LM,
           // .first is the word->class mapping
-          // .second is the emission log probability
+          // .second is the emission log probability 
+ public:
+  bool debug;
 };
 
 template <class Model>
@@ -348,7 +408,6 @@ KLanguageModel<Model>::KLanguageModel(const string& param) {
   fid_ = FD::Convert(featname);
   oov_fid_ = FD::Convert(featname+"_OOV");
   emit_fid_ = FD::Convert(featname+"_Emit");
-  // cerr << "FID: " << oov_fid_ << endl;
   SetStateSize(pimpl_->ReserveStateSize());
 }
 
@@ -364,14 +423,21 @@ void KLanguageModel<Model>::TraversalFeaturesImpl(const SentenceMetadata& /* sme
                                           SparseVector<double>* features,
                                           SparseVector<double>* /*estimated_features*/,
                                           void* state) const {
-  double est = 0;
+  if (pimpl_->debug) {
+    // cout << "end debug" << endl;
+  }
+  pimpl_->debug = false;
   double oovs = 0;
   double emit = 0;
-  features->set_value(fid_, pimpl_->LookupWords(*edge.rule_, ant_states, &oovs, &emit, state));
+  double est = pimpl_->LookupWords(*edge.rule_, ant_states, &oovs, &emit, state);
+  features->set_value(fid_, est);
   if (oovs && oov_fid_)
     features->set_value(oov_fid_, oovs);
   if (emit && emit_fid_)
     features->set_value(emit_fid_, emit);
+  if (pimpl_->debug) {
+    // cout << est << " " << oovs << endl;
+  }
 }
 
 template <class Model>
@@ -401,16 +467,6 @@ boost::shared_ptr<FeatureFunction> KLanguageModelFactory::Create(std::string par
   switch (m) {
     case PROBING:
       return CreateModel<ProbingModel>(param);
-    case REST_PROBING:
-      return CreateModel<RestProbingModel>(param);
-    case TRIE:
-      return CreateModel<TrieModel>(param);
-    case ARRAY_TRIE:
-      return CreateModel<ArrayTrieModel>(param);
-    case QUANT_TRIE:
-      return CreateModel<QuantTrieModel>(param);
-    case QUANT_ARRAY_TRIE:
-      return CreateModel<QuantArrayTrieModel>(param);
     default:
       UTIL_THROW(util::Exception, "Unrecognized kenlm binary file type " << (unsigned)m);
   }

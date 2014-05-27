@@ -105,7 +105,7 @@ template <class Value> class HashedSearch {
       return MiddlePointer(middle_[extend_length - 2].MustFind(extend_pointer)->value);
     }
 
-    MiddlePointer LookupMiddle(unsigned char order_minus_2, WordIndex word, Node &node, bool &independent_left, uint64_t &extend_pointer) const {
+    MiddlePointer LookupMiddle(unsigned char order_minus_2, WordIndex word, Node &node, bool &independent_left, uint64_t &extend_pointer, bool debug = false) const {
       node = CombineWordHash(node, word);
       typename Middle::ConstIterator found;
       if (!middle_[order_minus_2].Find(node, found)) {

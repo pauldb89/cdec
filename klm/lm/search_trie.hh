@@ -79,7 +79,7 @@ template <class Quant, class Bhiksha> class TrieSearch {
       return MiddlePointer(quant_, extend_length - 2, middle_begin_[extend_length - 2].ReadEntry(extend_pointer, node));
     }
 
-    MiddlePointer LookupMiddle(unsigned char order_minus_2, WordIndex word, Node &node, bool &independent_left, uint64_t &extend_left) const {
+    MiddlePointer LookupMiddle(unsigned char order_minus_2, WordIndex word, Node &node, bool &independent_left, uint64_t &extend_left, bool debug = false) const {
       util::BitAddress address(middle_begin_[order_minus_2].Find(word, node, extend_left));
       independent_left = (address.base == NULL) || (node.begin == node.end);
       return MiddlePointer(quant_, order_minus_2, address);

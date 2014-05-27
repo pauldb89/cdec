@@ -134,12 +134,12 @@ template <class Search, class VocabularyT> void GenericModel<Search, VocabularyT
   }
 }
 
-template <class Search, class VocabularyT> FullScoreReturn GenericModel<Search, VocabularyT>::FullScore(const State &in_state, const WordIndex new_word, State &out_state) const {
+template <class Search, class VocabularyT> FullScoreReturn GenericModel<Search, VocabularyT>::FullScore(const State &in_state, const WordIndex new_word, State &out_state, bool debug) const {
   // cout << vocab_.getWord(new_word) << " ";
   for (int i = 0; i < in_state.length; ++i) {
   //  cout << vocab_.getWord(in_state.words[i]) << " ";
   }
-  FullScoreReturn ret = ScoreExceptBackoff(in_state.words, in_state.words + in_state.length, new_word, out_state);
+  FullScoreReturn ret = ScoreExceptBackoff(in_state.words, in_state.words + in_state.length, new_word, out_state, debug);
   for (const float *i = in_state.backoff + ret.ngram_length - 1; i < in_state.backoff + in_state.length; ++i) {
     ret.prob += *i;
   }
@@ -255,13 +255,42 @@ template <class Search, class VocabularyT> FullScoreReturn GenericModel<Search, 
     const WordIndex *const context_rbegin,
     const WordIndex *const context_rend,
     const WordIndex new_word,
-    State &out_state) const {
+    State &out_state,
+    bool debug) const {
   assert(new_word < vocab_.Bound());
   FullScoreReturn ret;
   // ret.ngram_length contains the last known non-blank ngram length.
   ret.ngram_length = 1;
 
   typename Search::Node node;
+  typename Search::UnigramPointer uni(search_.LookupUnigram(new_word, node, ret.independent_left, ret.extend_left));
+  out_state.backoff[0] = uni.Backoff();
+  ret.prob = uni.Prob();
+  ret.rest = uni.Rest();
+
+  // This is the length of the context that should be used for continuation to the right.
+  out_state.length = HasExtension(out_state.backoff[0]) ? 1 : 0;
+  // We'll write the word anyway since it will probably be used and does no harm being there.
+  out_state.words[0] = new_word;
+  if (context_rbegin == context_rend) return ret;
+
+  ResumeScore(context_rbegin, context_rend, 0, node,
+              out_state.backoff + 1, out_state.length, ret, debug);
+  CopyRemainingHistory(context_rbegin, out_state);
+  return ret;
+}
+
+template <class Search, class VocabularyT> FullScoreReturn GenericModel<Search, VocabularyT>::ScoreExceptBackoff(
+    const WordIndex *const context_rbegin,
+    const WordIndex *const context_rend,
+    const WordIndex new_word,
+    State &out_state,
+    typename Search::Node& node) const {
+  assert(new_word < vocab_.Bound());
+  FullScoreReturn ret;
+  // ret.ngram_length contains the last known non-blank ngram length.
+  ret.ngram_length = 1;
+
   typename Search::UnigramPointer uni(search_.LookupUnigram(new_word, node, ret.independent_left, ret.extend_left));
   out_state.backoff[0] = uni.Backoff();
   ret.prob = uni.Prob();
@@ -283,7 +312,8 @@ template <class Search, class VocabularyT> void GenericModel<Search, VocabularyT
     const WordIndex *hist_iter, const WordIndex *const context_rend,
     unsigned char order_minus_2, typename Search::Node &node,
     float *backoff_out, unsigned char &next_use,
-    FullScoreReturn &ret) const {
+    FullScoreReturn &ret,
+    bool debug) const {
   for (; ; ++order_minus_2, ++hist_iter, ++backoff_out) {
     if (hist_iter == context_rend) return;
     if (ret.independent_left) return;
@@ -291,7 +321,7 @@ template <class Search, class VocabularyT> void GenericModel<Search, VocabularyT
 
     typename Search::MiddlePointer pointer(
         search_.LookupMiddle(order_minus_2, *hist_iter, node,
-                             ret.independent_left, ret.extend_left));
+                             ret.independent_left, ret.extend_left, debug));
     if (!pointer.Found()) return;
     *backoff_out = pointer.Backoff();
     ret.prob = pointer.Prob();
@@ -301,6 +331,7 @@ template <class Search, class VocabularyT> void GenericModel<Search, VocabularyT
       next_use = ret.ngram_length;
     }
   }
+
   ret.independent_left = true;
   typename Search::LongestPointer longest(search_.LookupLongest(*hist_iter, node));
   if (longest.Found()) {

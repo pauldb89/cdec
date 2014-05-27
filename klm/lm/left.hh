@@ -51,6 +51,8 @@
 namespace lm {
 namespace ngram {
 
+using namespace std;
+
 template <class M> class RuleScore {
   public:
     explicit RuleScore(const M &model, ChartState &out) : model_(model), out_(&out), left_done_(false), prob_(0.0) {
@@ -64,9 +66,9 @@ template <class M> class RuleScore {
       left_done_ = true;
     }
 
-    void Terminal(WordIndex word) {
+    void Terminal(WordIndex word, bool debug = false) {
       State copy(out_->right);
-      FullScoreReturn ret(model_.FullScore(copy, word, out_->right));
+      FullScoreReturn ret(model_.FullScore(copy, word, out_->right, debug));
       assert(ret.prob <= 0);
       if (left_done_) { prob_ += ret.prob; return; }
       if (ret.independent_left) {
@@ -89,10 +91,10 @@ template <class M> class RuleScore {
       left_done_ = in.left.full;
     }
 
-    void NonTerminal(const ChartState &in, float prob = 0.0) {
+    void NonTerminal(const ChartState &in, float prob = 0.0, bool debug = false) {
       assert(prob <= 0);
       prob_ += prob;
-      
+
       if (!in.left.length) {
         if (in.left.full) {
           for (const float *i = out_->right.backoff; i < out_->right.backoff + out_->right.length; ++i) 
@@ -183,7 +185,9 @@ template <class M> class RuleScore {
     }
 
   private:
-    bool ExtendLeft(const ChartState &in, unsigned char &next_use, unsigned char extend_length, const float *back_in, float *back_out) {
+    bool ExtendLeft(const ChartState &in, unsigned char &next_use,
+                    unsigned char extend_length, const float *back_in,
+                    float *back_out) {
       ProcessRet(model_.ExtendLeft(
             out_->right.words, out_->right.words + next_use, // Words to extend into
             back_in, // Backoffs to use

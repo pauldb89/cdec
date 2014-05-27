@@ -115,7 +115,7 @@ struct Candidate {
     }
     vit_prob_ = out_edge_.edge_prob_ * p;
     est_prob_ = vit_prob_ * edge_estimate;
-    assert(vit_prob_ == est_prob_);
+    cout << est_prob_ << endl;
   }
 };
 

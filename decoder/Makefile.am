@@ -48,6 +48,7 @@ libcdec_a_SOURCES = \
   ff_external.h \
   ff_factory.h \
   ff_klm.h \
+	ff_lbl.h \
   ff_lm.h \
   ff_ngrams.h \
   ff_parse_match.h \
@@ -112,6 +113,7 @@ libcdec_a_SOURCES = \
   ff_external.cc \
   ff_factory.cc \
   ff_klm.cc \
+	ff_lbl.cc \
   ff_lm.cc \
   ff_ngrams.cc \
   ff_parse_match.cc \
