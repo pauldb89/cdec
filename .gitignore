@@ -110,6 +110,7 @@ klm/lm/builder/lmplz
 klm/lm/build_binary
 klm/lm/ngram_query
 klm/lm/query
+klm/lm/predict
 klm/util/bin/
 libtool
 ltmain.sh

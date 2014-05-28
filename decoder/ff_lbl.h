@@ -55,7 +55,7 @@ class FF_LBLLM : public FeatureFunction {
 
   SimplePair FinalTraversalCost(const void* state) const;
 
-  SimplePair EstimateProb(const void* state) const;
+  SimplePair EstimateProb(void* state) const;
 
   int StateSize(const void* state) const;
 

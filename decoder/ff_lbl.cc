@@ -116,7 +116,7 @@ void FF_LBLLM::TraversalFeaturesImpl(
     features->set_value(fidOOV, ft.second);
   }
   if (debug) {
-    // cout << ft.first << " " << ft.second << endl;
+  //  cout << ft.first << " " << ft.second << endl;
   }
   SimplePair ft2 = EstimateProb(state);
   if (ft2.first) {
@@ -127,7 +127,7 @@ void FF_LBLLM::TraversalFeaturesImpl(
   }
 
   if (debug) {
-    // cout << ft2.first << " " << ft2.second << endl;
+  //  cout << ft2.first << " " << ft2.second << endl;
   }
 }
 
@@ -144,7 +144,6 @@ void PrintBuffer(
 
 template<class Model>
 int ReduceLeft(const vector<WordIndex>& left, const boost::shared_ptr<Model>& model) {
-  // Reduce left.
   for (int start_left = left.size() - 1; start_left >= 0; --start_left) {
     typename Model::Node node;
     bool should_stop;
@@ -214,7 +213,7 @@ SimplePair FF_LBLLM::LookupWords(
     }
   }
 
-  vector<WordID> expected = {892, 5, 6, 0};
+  vector<WordID> expected = {0, 19, 169, 64, 12};
   if (e == expected) {
     debug = true;
     // cout << "begin debug" << endl;
@@ -222,9 +221,11 @@ SimplePair FF_LBLLM::LookupWords(
   }
 
   SimplePair sum;
-  vector<WordIndex> left;
   i = len - 1;
   int edge = len;
+
+  int next_len = 0;
+  WordIndex* next_state = reinterpret_cast<WordIndex*>(vstate);
 
   while (i >= 0) {
     if (buffer[i] == kSTAR) {
@@ -233,52 +234,19 @@ SimplePair FF_LBLLM::LookupWords(
       //cerr << "X: ";
       sum += LookupProbForBufferContents(i);
     } else if (edge == len) {
-      left.push_back(buffer[i]);
+      next_state[next_len++] = buffer[i];
     }
     --i;
   }
 
-  // Extend next state to the left.
-  int next_len = 0;
-  WordIndex* next_state = reinterpret_cast<WordIndex*>(vstate);
-  for (int word_id: left) {
-    next_state[next_len++] = word_id;
-  }
-
   if (edge != len || len >= kORDER) {
-    cout << "split" << endl;
-    cout << "red left: " << ReduceLeft<Model>(left, model) << endl;
-    left.resize(ReduceLeft<Model>(left, model));
-    ExtendState(left, next_state, next_len);
-
     next_state[next_len++] = kSTAR;
     if (kORDER-1 < edge) edge = kORDER-1;
 
-    vector<WordIndex> right;
     for (int i = edge-1; i >= 0; --i) {
-      right.push_back(buffer[i]);
+      next_state[next_len++] = buffer[i];
     }
-
-    cout << "red right: " << ReduceRight<Model>(right, model) << endl;
-    right.erase(right.begin(), right.begin() + ReduceRight<Model>(right, model));
-
-    ExtendState(right, next_state, next_len);
-  } else {
-    int reduce_left = ReduceLeft<Model>(left, model);
-    int reduce_right = ReduceRight<Model>(left, model);
-    cout << "joint" << endl;
-    cout << "red left: " << reduce_left << endl;
-    cout << "red right: " << reduce_right << endl;
-    left.erase(left.begin() + reduce_left, left.begin() + reduce_right);
-    ExtendState(left, next_state, next_len);
   }
-
-  vector<WordIndex> next(next_len);
-  for (int i = 0; i < next_len; ++i) {
-    next[i] = next_state[i];
-  }
-  cout << "final state: ";
-  PrintBuffer(next, mapper);
 
   SetStateSize(next_len, vstate);
   assert(StateSize(vstate) == next_len);
@@ -303,7 +271,7 @@ SimplePair FF_LBLLM::FinalTraversalCost(const void* state) const {
   buffer.resize(len + 1);
   buffer[len] = kNONE;
   buffer[len-1] = kSTART;
-  const int* astate = reinterpret_cast<const WordID*>(state);
+  const WordIndex* astate = reinterpret_cast<const WordIndex*>(state);
   int i = len - 2;
   for (int j = 0; j < slen; ++j,--i)
     buffer[i] = astate[j];
@@ -342,20 +310,63 @@ double FF_LBLLM::WordProb(WordIndex word, const WordIndex* history) const {
   return model->FullScore(state, word, out).prob;
 }
 
-SimplePair FF_LBLLM::EstimateProb(const void* state) const {
+SimplePair FF_LBLLM::EstimateProb(void* state) const {
   int len = StateSize(state);
   buffer.resize(len + 1);
   buffer[len] = kNONE;
-  const int* astate = reinterpret_cast<const WordID*>(state);
+  const WordIndex* astate = reinterpret_cast<const WordIndex*>(state);
   int i = len - 1;
   for (int j = 0; j < len; ++j,--i) {
     buffer[i] = astate[j];
   }
 
-  // cout << "final state: ";
-  // PrintBuffer(buffer, mapper);
+  SimplePair ret = ProbNoRemnant(len - 1, len);
 
-  return ProbNoRemnant(len - 1, len);
+  int split_point = -1;
+  for (int j = 0 ; j < len; ++j) {
+    if (astate[j] == kSTAR) {
+      split_point = j;
+      break;
+    }
+  }
+
+  int new_len = 0;
+  WordIndex* new_state = reinterpret_cast<WordIndex*>(state);
+
+  if (split_point == -1) {
+    vector<WordIndex> left;
+    for (int j = 0; j < len; ++j) {
+      left.push_back(astate[j]);
+    }
+
+    int reduce_left = ReduceLeft<Model>(left, model);
+    int reduce_right = ReduceRight<Model>(left, model);
+    if (reduce_left <= reduce_right) {
+      left.erase(left.begin() + reduce_left, left.begin() + reduce_right);
+    }
+
+    ExtendState(left, new_state, new_len);
+  } else {
+    vector<WordIndex> left, right;
+    for (int j = 0; j < split_point; ++j) {
+      left.push_back(astate[j]);
+    }
+
+    int reduce_left = ReduceLeft<Model>(left, model);
+    left.resize(reduce_left);
+    ExtendState(left, new_state, new_len);
+
+    new_state[new_len++] = kSTAR;
+
+    for (int j = split_point + 1; j < len; ++j) {
+      right.push_back(astate[j]);
+    }
+    int reduce_right = ReduceRight<Model>(right, model);
+    right.erase(right.begin(), right.begin() + reduce_right);
+    ExtendState(right, new_state, new_len);
+  }
+
+  return ret;
 }
 
 SimplePair FF_LBLLM::ProbNoRemnant(int i, int len) const {

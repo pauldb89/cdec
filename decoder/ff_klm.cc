@@ -77,6 +77,7 @@ VMapper::VMapper(vector<lm::WordIndex>* out)
 }
 
 void VMapper::Add(lm::WordIndex index, const StringPiece &str) {
+  // cout << index << " " << str.as_string() << endl;
   const WordID cdec_id = TD::Convert(str.as_string());
   if (cdec_id >= out_->size()) {
     out_->resize(cdec_id + 1, kLM_UNKNOWN_TOKEN);
@@ -192,6 +193,7 @@ void PrintState(const lm::ngram::ChartState& state, Model* ngram_) {
   for (int i = state.right.length - 1; i >= 0; --i) {
     cout << ngram_->GetVocabulary().getWord(state.right.words[i]) << " ";
   }
+  cout << endl;
 }
 
 template <class Model>
@@ -209,20 +211,11 @@ class KLanguageModelImpl {
       }
     }
 
-    vector<WordID> expected = {892, 5, 6, 0};
+    vector<WordID> expected = {0, 19, 169, 64, 12};
     debug = e == expected;
 
     if (debug) {
-      /*
-      cout << "begin debug" << endl;
-      for (WordID id: e) {
-        if (id <= 0) {
-          PrintState<Model>(static_cast<const BoundaryAnnotatedState*>(ant_states[-id])->state, ngram_);
-        } else {
-          cout << TD::Convert(id) << " ";
-        }
-      }
-      */
+      // cout << endl << "begin debug" << endl;
     }
     // cout << endl;
 
@@ -253,9 +246,10 @@ class KLanguageModelImpl {
     double ret = ruleScore.Finish();
     static_cast<BoundaryAnnotatedState*>(remnant)->state.ZeroRemaining();
 
-    cout << "final state: ";
-    PrintState<Model>(static_cast<BoundaryAnnotatedState*>(remnant)->state, ngram_);
-    cout << endl;
+    if (debug) {
+      // cout << endl << "final state: ";
+      // PrintState<Model>(static_cast<BoundaryAnnotatedState*>(remnant)->state, ngram_);
+    }
     return ret;
   }
 
@@ -436,6 +430,7 @@ void KLanguageModel<Model>::TraversalFeaturesImpl(const SentenceMetadata& /* sme
   if (emit && emit_fid_)
     features->set_value(emit_fid_, emit);
   if (pimpl_->debug) {
+    // cout << "0 0" << endl;
     // cout << est << " " << oovs << endl;
   }
 }

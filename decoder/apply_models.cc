@@ -38,6 +38,11 @@ typedef vector<Candidate*> CandidateList;
 // default vector size (* sizeof string is memory used)
 static const size_t kRESERVE_NUM_NODES = 500000ul;
 
+double SpecialRound(double x) {
+  int y = x * 1000;
+  return y / 1000.0;
+}
+
 // life cycle: candidates are created, placed on the heap
 // and retrieved by their estimated cost, when they're
 // retrieved, they're incorporated into the +LM hypergraph
@@ -113,8 +118,8 @@ struct Candidate {
     } else {
       models.AddFeaturesToEdge(smeta, out_hg, node_states, &out_edge_, &state_, &edge_estimate);
     }
-    vit_prob_ = out_edge_.edge_prob_ * p;
-    est_prob_ = vit_prob_ * edge_estimate;
+    vit_prob_ = SpecialRound(out_edge_.edge_prob_ * p);
+    est_prob_ = SpecialRound(vit_prob_ * edge_estimate);
     cout << est_prob_ << endl;
   }
 };
